@@ -1,0 +1,114 @@
+[
+  {
+    "id": "vector",
+    "slug": "vector",
+    "name": "Vector",
+    "type": "Luxury Electric Sedan",
+    "tagline": "Sleek, intelligent, and built for those who demand more from every journey.",
+    "description": "Vector combines aerodynamic precision with a premium interior crafted for pure comfort and complete control.",
+    "image": "/images/vector.png",
+    "detailImage": "/images/vector-detail.png",
+    "specs": {
+      "range": "620 km",
+      "maxPower": "350 kW",
+      "acceleration": "3.8 s",
+      "topSpeed": "200 km/h"
+    },
+    "features": [
+      {
+        "title": "Ultra-Fast Charging",
+        "description": "10-80% in just 18 minutes."
+      },
+      {
+        "title": "Intelligent Cockpit",
+        "description": "15.6\" center display with AI voice control."
+      },
+      {
+        "title": "Premium Sound",
+        "description": "23-speaker audio system for an immersive experience."
+      },
+      {
+        "title": "Advanced Safety",
+        "description": "L2+ driver assistance for every journey."
+      }
+    ],
+    "batteryPercent": 84,
+    "status": "parked"
+  },
+  {
+    "id": "cloud",
+    "slug": "cloud",
+    "name": "Cloud",
+    "type": "Electric SUV",
+    "tagline": "Spacious, versatile, and ready for life's biggest adventures.",
+    "description": "Cloud is engineered for comfort, versatility, and confidence on any road, in any weather.",
+    "image": "/images/cloud.png",
+    "detailImage": "/images/cloud-detail.png",
+    "specs": {
+      "range": "580 km",
+      "maxPower": "315 kW",
+      "acceleration": "5.1 s",
+      "topSpeed": "180 km/h",
+      "extraLabel": "Seats",
+      "extraValue": "7 Seats"
+    },
+    "features": [
+      {
+        "title": "All-Wheel Drive",
+        "description": "Confident traction in all conditions."
+      },
+      {
+        "title": "Large Cargo Space",
+        "description": "Up to 2,100 L with folded seats."
+      },
+      {
+        "title": "Panoramic Roof",
+        "description": "Bring the sky inside with a wide view."
+      },
+      {
+        "title": "Heat Pump System",
+        "description": "Better efficiency, longer range."
+      }
+    ],
+    "batteryPercent": 42,
+    "status": "disconnected"
+  },
+  {
+    "id": "bullet",
+    "slug": "bullet",
+    "name": "Bullet",
+    "type": "Electric Motorcycle",
+    "tagline": "Instant torque. Zero emissions. Pure adrenaline.",
+    "description": "Bullet delivers thrilling performance with agile handling and a design that stands out.",
+    "image": "/images/bullet.png",
+    "detailImage": "/images/bullet-detail.png",
+    "specs": {
+      "range": "200 km",
+      "maxPower": "20 kW",
+      "acceleration": "2.7 s",
+      "topSpeed": "120 km/h",
+      "extraLabel": "Weight",
+      "extraValue": "140 kg"
+    },
+    "features": [
+      {
+        "title": "Instant Acceleration",
+        "description": "0-60 km/h in 2.7 seconds."
+      },
+      {
+        "title": "Smart Display",
+        "description": "TFT dashboard with ride modes and navigation."
+      },
+      {
+        "title": "Regenerative Braking",
+        "description": "More range, better control."
+      },
+      {
+        "title": "Portable Charging",
+        "description": "Charge anywhere with a standard plug."
+      }
+    ],
+    "batteryPercent": 95,
+    "status": "charging"
+  }
+]

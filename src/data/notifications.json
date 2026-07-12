@@ -1,0 +1,18 @@
+[
+  {
+    "id": "notif-01",
+    "userId": "usr-01",
+    "title": "Charging Complete",
+    "message": "Your Vector is fully charged to 84%. Ready for travel.",
+    "read": false,
+    "createdAt": "2026-07-08T19:12:00Z"
+  },
+  {
+    "id": "notif-02",
+    "userId": "usr-01",
+    "title": "Software Update Available",
+    "message": "EVALIS OS v3.2.1 is ready to download. Precondition features updated.",
+    "read": true,
+    "createdAt": "2026-07-05T12:00:00Z"
+  }
+]

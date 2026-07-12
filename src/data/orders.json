@@ -1,0 +1,13 @@
+[
+  {
+    "id": "ord-01",
+    "userId": "usr-01",
+    "items": [
+      { "productId": "home-charger", "quantity": 1, "price": 499 }
+    ],
+    "subtotal": 499,
+    "currency": "$",
+    "status": "delivered",
+    "createdAt": "2026-06-15T10:45:00Z"
+  }
+]

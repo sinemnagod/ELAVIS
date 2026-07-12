@@ -1,0 +1,6 @@
+[
+  { "id": "chargers", "name": "Chargers & Hubs" },
+  { "id": "cables", "name": "Cables" },
+  { "id": "accessories", "name": "Vehicle Accessories" },
+  { "id": "parts", "name": "Parts" }
+]

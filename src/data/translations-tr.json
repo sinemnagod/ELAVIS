@@ -1,0 +1,87 @@
+{
+  "nav": {
+    "home": "Ana Sayfa",
+    "vehicles": "Araçlar",
+    "charging": "Şarj",
+    "shop": "Mağaza",
+    "testDrive": "Test Sürüşü",
+    "profile": "Profil",
+    "checkout": "Ödeme",
+    "dashboard": "Panel",
+    "admin": "Yönetici",
+    "logout": "Çıkış Yap"
+  },
+  "cta": {
+    "bookTestDrive": "Test Sürüşü Ayarla",
+    "configure": "Yapılandır",
+    "learnMore": "Daha Fazla Bilgi",
+    "login": "Giriş Yap",
+    "signUp": "Kayıt Ol",
+    "welcomeBack": "Tekrar hoş geldiniz",
+    "welcomeSub": "Paneline erişmek için giriş yap",
+    "rememberMe": "Beni hatırla",
+    "googleLogin": "Google ile devam et",
+    "appleLogin": "Apple ile devam et",
+    "noAccount": "Hesabınız yok mu?"
+  },
+  "vehicles": {
+    "lineup": "MODELLERİMİZ",
+    "lineupTitle": "Üç Model. Tek Vizyon.",
+    "range": "Menzil",
+    "power": "Maks. Güç",
+    "acceleration": "0-100 km/s",
+    "topSpeed": "Maks. Hız"
+  },
+  "shop": {
+    "title": "Şarj & Aksesuarlar",
+    "bestSellers": "EN ÇOK SATANLAR",
+    "addToCart": "Sepete Ekle",
+    "quickView": "Hızlı Bakış",
+    "inStock": "Stokta Var"
+  },
+  "testDrive": {
+    "firstName": "Adı",
+    "lastName": "Soyadı",
+    "email": "E-posta Adresi",
+    "phone": "Telefon Numarası",
+    "date": "Tarih Seçin",
+    "time": "Saat Seçin",
+    "location": "Showroom Seçin",
+    "vehicle": "Araç Seçin",
+    "selectedVehicle": "Seçilen Araç",
+    "selectedLocation": "Seçilen Showroom",
+    "selectedDate": "Seçilen Tarih",
+    "selectedTime": "Seçilen Saat",
+    "submit": "Test Sürüşü Talep Et",
+    "submitting": "Talep İşleniyor...",
+    "successTitle": "Rezervasyon Onaylandı",
+    "successSub": "Test sürüşü talebiniz kaydedilmiştir. Müşteri temsilcimiz onaylama için en kısa sürede sizinle iletişime geçecektir.",
+    "reset": "Başka Bir Rezervasyon Yap",
+    "backToCatalog": "Modellere Dön",
+    "validationError": "Tüm alanlar zorunludur — lütfen göndermeden önce her alanı doldurun."
+  },
+  "dashboard": {
+    "nav": {
+      "overview": "Genel Bakış",
+      "vehicles": "Araçlarım",
+      "charging": "Şarj Kontrolü",
+      "stations": "İstasyon Haritası",
+      "history": "Şarj Geçmişi",
+      "schedules": "Programlar",
+      "energy": "Enerji",
+      "notifications": "Bildirimler",
+      "rewards": "Ödüller",
+      "settings": "Ayarlar",
+      "backToSite": "Ana Siteye Dön"
+    },
+    "header": {
+      "welcomeBack": "Tekrar hoş geldiniz"
+    },
+    "actions": {
+      "expandSidebar": "Menüyü Genişlet",
+      "collapseSidebar": "Menüyü Daralt",
+      "lightTheme": "Açık Temaya Geç",
+      "darkTheme": "Koyu Temaya Geç"
+    }
+  }
+}

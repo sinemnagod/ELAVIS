@@ -1,0 +1,82 @@
+[
+  {
+    "id": "usr-01",
+    "role": "customer",
+    "name": "Sinem Doğan",
+    "email": "customer@evalis.com",
+    "phone": "+90 555 123 45 67",
+    "ownedVehicleIds": ["vector", "cloud"]
+  },
+  {
+    "id": "usr-02",
+    "role": "admin",
+    "name": "EVALIS Administrator",
+    "email": "admin@evalis.com",
+    "phone": "+90 212 987 65 43",
+    "ownedVehicleIds": []
+  },
+  {
+    "id": "usr-03",
+    "role": "customer",
+    "name": "Ahmet Yılmaz",
+    "email": "ahmet@evalis.com",
+    "phone": "+90 532 987 65 43",
+    "ownedVehicleIds": ["cloud"]
+  },
+  {
+    "id": "usr-04",
+    "role": "customer",
+    "name": "Elif Demir",
+    "email": "elif.demir@gmail.com",
+    "phone": "+90 505 456 78 90",
+    "ownedVehicleIds": ["bullet"]
+  },
+  {
+    "id": "usr-05",
+    "role": "customer",
+    "name": "Mehmet Kaya",
+    "email": "mehmet@hotmail.com",
+    "phone": "+90 544 321 09 87",
+    "ownedVehicleIds": ["vector"]
+  },
+  {
+    "id": "usr-06",
+    "role": "customer",
+    "name": "Zeynep Çelik",
+    "email": "zeynep.celik@outlook.com",
+    "phone": "+90 533 654 32 10",
+    "ownedVehicleIds": ["cloud", "bullet"]
+  },
+  {
+    "id": "usr-07",
+    "role": "customer",
+    "name": "Can Özkan",
+    "email": "can.ozkan@yahoo.com",
+    "phone": "+90 551 789 45 61",
+    "ownedVehicleIds": ["vector", "bullet"]
+  },
+  {
+    "id": "usr-08",
+    "role": "customer",
+    "name": "Ayşe Koç",
+    "email": "ayse.koc@evalis.com",
+    "phone": "+90 546 258 74 12",
+    "ownedVehicleIds": ["cloud"]
+  },
+  {
+    "id": "usr-09",
+    "role": "customer",
+    "name": "Deniz Aslan",
+    "email": "deniz.aslan@live.com",
+    "phone": "+90 539 963 85 27",
+    "ownedVehicleIds": ["vector"]
+  },
+  {
+    "id": "usr-10",
+    "role": "customer",
+    "name": "Merve Şahin",
+    "email": "merve.sahin@gmail.com",
+    "phone": "+90 552 147 85 96",
+    "ownedVehicleIds": ["cloud"]
+  }
+]

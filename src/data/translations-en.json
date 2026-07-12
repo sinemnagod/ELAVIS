@@ -1,0 +1,87 @@
+{
+  "nav": {
+    "home": "Home",
+    "vehicles": "Vehicles",
+    "charging": "Charging",
+    "shop": "Shop",
+    "testDrive": "Test Drive",
+    "profile": "Profile",
+    "checkout": "Checkout",
+    "dashboard": "Dashboard",
+    "admin": "Admin",
+    "logout": "Log Out"
+  },
+  "cta": {
+    "bookTestDrive": "Book a Test Drive",
+    "configure": "Configure",
+    "learnMore": "Learn More",
+    "login": "Log In",
+    "signUp": "Sign Up",
+    "welcomeBack": "Welcome back",
+    "welcomeSub": "Log in to continue to your dashboard",
+    "rememberMe": "Remember me",
+    "googleLogin": "Continue with Google",
+    "appleLogin": "Continue with Apple",
+    "noAccount": "Don't have an account?"
+  },
+  "vehicles": {
+    "lineup": "OUR LINEUP",
+    "lineupTitle": "Three Models. One Vision.",
+    "range": "Range",
+    "power": "Max Power",
+    "acceleration": "0-100 km/h",
+    "topSpeed": "Top Speed"
+  },
+  "shop": {
+    "title": "Charging & Accessories",
+    "bestSellers": "BEST SELLERS",
+    "addToCart": "Add to Cart",
+    "quickView": "Quick View",
+    "inStock": "In Stock"
+  },
+  "testDrive": {
+    "firstName": "First Name",
+    "lastName": "Last Name",
+    "email": "Email Address",
+    "phone": "Phone Number",
+    "date": "Select Date",
+    "time": "Select Time",
+    "location": "Select Showroom",
+    "vehicle": "Select Vehicle",
+    "selectedVehicle": "Selected Vehicle",
+    "selectedLocation": "Selected Showroom",
+    "selectedDate": "Selected Date",
+    "selectedTime": "Selected Time",
+    "submit": "Request Test Drive",
+    "submitting": "Processing Request...",
+    "successTitle": "Booking Confirmed",
+    "successSub": "Your test drive request has been registered. Our representative will contact you shortly to confirm.",
+    "reset": "Book Another Drive",
+    "backToCatalog": "Back to Lineup",
+    "validationError": "Every field is required — please fill in all fields before submitting."
+  },
+  "dashboard": {
+    "nav": {
+      "overview": "Overview",
+      "vehicles": "My Vehicles",
+      "charging": "Charging Control",
+      "stations": "Stations Map",
+      "history": "Session History",
+      "schedules": "Schedules",
+      "energy": "Energy",
+      "notifications": "Notifications",
+      "rewards": "Rewards",
+      "settings": "Settings",
+      "backToSite": "Back to Main Site"
+    },
+    "header": {
+      "welcomeBack": "Welcome back"
+    },
+    "actions": {
+      "expandSidebar": "Expand Sidebar",
+      "collapseSidebar": "Collapse Sidebar",
+      "lightTheme": "Switch to Light Theme",
+      "darkTheme": "Switch to Dark Theme"
+    }
+  }
+}
