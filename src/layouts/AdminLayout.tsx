@@ -2,7 +2,13 @@ import { useEffect, useState } from "react";
 import { NavLink, Outlet, Link, useNavigate, useLocation } from "react-router-dom";
 import { useLanguage } from "@/i18n/LanguageContext";
 import { useAuth } from "@/context/AuthContext";
+import { useToast } from "@/context/ToastContext";
 import { readStorage, writeStorage, storageKeys } from "@/lib/storage";
+import vehiclesData from "@/data/vehicles.json";
+import stationsData from "@/data/stations.json";
+import usersData from "@/data/users.json";
+import { Order, TestDrive, User, Station, Vehicle } from "@/types";
+import { createReport, addSectionTitle, addStatGrid, addTable, addEmptyNote, finalizeReport } from "@/lib/pdfReport";
 
 function LogoText({ className = "" }: { className?: string }) {
   return (
@@ -14,9 +20,10 @@ function LogoText({ className = "" }: { className?: string }) {
 
 // Custom modern SVG icons instead of emojis
 const adminLinks = [
-  { 
-    to: "/admin", 
-    label: "Overview", 
+  {
+    to: "/admin",
+    labelEn: "Overview",
+    labelTr: "Genel Bakış",
     end: true,
     icon: (
       <svg className="w-5 h-5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -24,27 +31,30 @@ const adminLinks = [
       </svg>
     )
   },
-  { 
-    to: "/admin/users", 
-    label: "Users List", 
+  {
+    to: "/admin/users",
+    labelEn: "Users List",
+    labelTr: "Kullanıcı Listesi",
     icon: (
       <svg className="w-5 h-5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a3 3 0 11-6 0 3 3 0 016 0z" />
       </svg>
     )
   },
-  { 
-    to: "/admin/vehicles", 
-    label: "Fleet Info", 
+  {
+    to: "/admin/vehicles",
+    labelEn: "Fleet Info",
+    labelTr: "Filo Bilgisi",
     icon: (
       <svg className="w-5 h-5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M12 18h.01M8 21h8a2 2 0 002-2V9a2 2 0 00-2-2H8a2 2 0 00-2 2v10a2 2 0 002 2z" />
       </svg>
     )
   },
-  { 
-    to: "/admin/stations", 
-    label: "Grid Ports", 
+  {
+    to: "/admin/stations",
+    labelEn: "Grid Ports",
+    labelTr: "Şarj Ağı",
     icon: (
       <svg className="w-5 h-5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
@@ -54,7 +64,8 @@ const adminLinks = [
   },
   {
     to: "/admin/sessions",
-    label: "Charging Sessions",
+    labelEn: "Charging Sessions",
+    labelTr: "Şarj Seansları",
     icon: (
       <svg className="w-5 h-5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M13 10V3L4 14h7v7l9-11h-7z" />
@@ -63,7 +74,8 @@ const adminLinks = [
   },
   {
     to: "/admin/products",
-    label: "Products",
+    labelEn: "Products",
+    labelTr: "Ürünler",
     icon: (
       <svg className="w-5 h-5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M20.59 13.41L13.42 20.58a2 2 0 01-2.83 0L3 13V3h10l7.59 7.59a2 2 0 010 2.82z" />
@@ -73,34 +85,48 @@ const adminLinks = [
   },
   {
     to: "/admin/orders",
-    label: "Shop Orders",
+    labelEn: "Shop Orders",
+    labelTr: "Mağaza Siparişleri",
     icon: (
       <svg className="w-5 h-5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
       </svg>
     )
   },
-  { 
-    to: "/admin/test-drives", 
-    label: "Test Drives", 
+  {
+    to: "/admin/test-drives",
+    labelEn: "Test Drives",
+    labelTr: "Test Sürüşleri",
     icon: (
       <svg className="w-5 h-5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
       </svg>
     )
   },
-  { 
-    to: "/admin/analytics", 
-    label: "Analytics", 
+  {
+    to: "/admin/support",
+    labelEn: "Support",
+    labelTr: "Destek",
+    icon: (
+      <svg className="w-5 h-5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+      </svg>
+    )
+  },
+  {
+    to: "/admin/analytics",
+    labelEn: "Analytics",
+    labelTr: "Analitik",
     icon: (
       <svg className="w-5 h-5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M7 12l3-3 3 3 4-4M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z" />
       </svg>
     )
   },
-  { 
-    to: "/admin/settings", 
-    label: "System Config", 
+  {
+    to: "/admin/settings",
+    labelEn: "System Config",
+    labelTr: "Sistem Ayarları",
     icon: (
       <svg className="w-5 h-5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
@@ -111,8 +137,9 @@ const adminLinks = [
 ];
 
 export function AdminLayout() {
-  const { language, changeLanguage, t } = useLanguage();
+  const { language, changeLanguage, t, formatPrice } = useLanguage();
   const { session, logout } = useAuth();
+  const { showToast } = useToast();
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -138,6 +165,101 @@ export function AdminLayout() {
   useEffect(() => {
     writeStorage(storageKeys.adminTheme, theme);
   }, [theme]);
+
+  // Builds and downloads the platform-wide PDF report. Lives in the layout
+  // (not the Overview page) so the sidebar button works from any admin route.
+  const handleExportPdf = () => {
+    const usersAll = readStorage<User[]>(storageKeys.users, usersData as User[]);
+    const vehiclesAll = vehiclesData as Vehicle[];
+    const stationsAll = readStorage<Station[]>(storageKeys.stations, stationsData as Station[]);
+    const orders = readStorage<Order[]>(storageKeys.orders, []);
+    const testDrives = readStorage<TestDrive[]>(storageKeys.testDrives, []);
+
+    const orderUSD = (o: Order) => (o.currency === "$" ? o.subtotal : o.subtotal / 34);
+    const totalRevenueUSD = orders.reduce((acc, o) => acc + orderUSD(o), 0);
+    const pendingTestDrives = testDrives.filter((td) => td.status === "pending").length;
+    const activeStationsCount = stationsAll.filter((s) => s.status === "active").length;
+
+    const ctx = createReport(
+      language === "en" ? "Admin Overview Report" : "Yönetici Genel Bakış Raporu",
+      language === "en"
+        ? "Snapshot of customers, fleet, stations, orders, and test drive activity."
+        : "Müşteriler, filo, istasyonlar, siparişler ve test sürüşü faaliyetlerinin anlık görünümü.",
+      language
+    );
+
+    addSectionTitle(ctx, language === "en" ? "Platform Snapshot" : "Platform Anlık Görünümü");
+    addStatGrid(ctx, [
+      { label: language === "en" ? "Total Customers" : "Toplam Müşteri", value: String(usersAll.length) },
+      { label: language === "en" ? "Fleet Models" : "Filo Modeli", value: String(vehiclesAll.length) },
+      { label: language === "en" ? "Active Stations" : "Aktif İstasyon", value: `${activeStationsCount} / ${stationsAll.length}` },
+      { label: language === "en" ? "Shop Revenue" : "Mağaza Geliri", value: formatPrice(totalRevenueUSD, totalRevenueUSD * 34) },
+      { label: language === "en" ? "Total Orders" : "Toplam Sipariş", value: String(orders.length) },
+      { label: language === "en" ? "Pending Test Drives" : "Bekleyen Test Sürüşü", value: `${pendingTestDrives} / ${testDrives.length}` }
+    ]);
+
+    addSectionTitle(ctx, language === "en" ? "Test Drive Requests" : "Test Sürüşü Talepleri");
+    if (testDrives.length === 0) {
+      addEmptyNote(ctx, language === "en" ? "No test drives booked." : "Rezerve edilmiş test sürüşü yok.");
+    } else {
+      addTable(
+        ctx,
+        [
+          language === "en" ? "Customer" : "Müşteri",
+          language === "en" ? "Showroom" : "Showroom",
+          language === "en" ? "Date" : "Tarih",
+          language === "en" ? "Time" : "Saat",
+          language === "en" ? "Status" : "Durum"
+        ],
+        testDrives.map((d) => [
+          `${d.firstName} ${d.lastName}`,
+          d.location,
+          d.date,
+          d.time,
+          d.status === "pending"
+            ? (language === "en" ? "Pending" : "Beklemede")
+            : d.status === "confirmed"
+              ? (language === "en" ? "Confirmed" : "Onaylandı")
+              : (language === "en" ? "Completed" : "Tamamlandı")
+        ])
+      );
+    }
+
+    addSectionTitle(ctx, language === "en" ? "Shop Orders" : "Mağaza Siparişleri");
+    if (orders.length === 0) {
+      addEmptyNote(ctx, language === "en" ? "No shop orders placed." : "Sipariş bulunmuyor.");
+    } else {
+      addTable(
+        ctx,
+        [
+          language === "en" ? "Order" : "Sipariş",
+          language === "en" ? "Date" : "Tarih",
+          language === "en" ? "Items" : "Ürün",
+          language === "en" ? "Total" : "Toplam",
+          language === "en" ? "Status" : "Durum"
+        ],
+        orders.map((o) => {
+          const orderStatusLabels: Record<Order["status"], { en: string; tr: string }> = {
+            processing: { en: "Processing", tr: "İşleniyor" },
+            shipped: { en: "Shipped", tr: "Kargoda" },
+            delivered: { en: "Delivered", tr: "Teslim Edildi" },
+            cancellation_requested: { en: "Cancellation Requested", tr: "İptal Talep Edildi" },
+            cancelled: { en: "Cancelled", tr: "İptal Edildi" }
+          };
+          return [
+            o.id,
+            new Date(o.createdAt).toLocaleDateString(language === "en" ? "en-US" : "tr-TR"),
+            String(o.items.length),
+            `${o.currency}${o.subtotal.toLocaleString()}`,
+            language === "en" ? orderStatusLabels[o.status].en : orderStatusLabels[o.status].tr
+          ];
+        })
+      );
+    }
+
+    finalizeReport(ctx, `evalis-admin-overview-${new Date().toISOString().slice(0, 10)}.pdf`);
+    showToast(language === "en" ? "PDF report downloaded" : "PDF raporu indirildi", "success");
+  };
 
   if (!session || session.user.role !== "admin") {
     return (
@@ -190,26 +312,29 @@ export function AdminLayout() {
 
           {/* Navigation Links */}
           <nav className="space-y-1 shrink-0">
-            {adminLinks.map((link) => (
-              <NavLink
-                key={link.to}
-                to={link.to}
-                end={link.end}
-                title={isCollapsed ? link.label : ""}
-                className={({ isActive }) =>
-                  `flex items-center ${isCollapsed ? "justify-center px-0" : "gap-3 px-4"} rounded-xl py-3 text-xs uppercase tracking-wider font-semibold transition ${
-                    isActive
-                      ? "bg-red-500/10 text-red-400 border border-red-500/20"
-                      : (theme === "light"
-                          ? "text-slate-600 hover:bg-slate-100 hover:text-slate-900 border border-transparent"
-                          : "text-slate-400 hover:bg-white/5 hover:text-white border border-transparent")
-                  }`
-                }
-              >
-                {link.icon}
-                {!isCollapsed && <span>{link.label}</span>}
-              </NavLink>
-            ))}
+            {adminLinks.map((link) => {
+              const label = language === "en" ? link.labelEn : link.labelTr;
+              return (
+                <NavLink
+                  key={link.to}
+                  to={link.to}
+                  end={link.end}
+                  title={isCollapsed ? label : ""}
+                  className={({ isActive }) =>
+                    `flex items-center ${isCollapsed ? "justify-center px-0" : "gap-3 px-4"} rounded-xl py-3 text-xs uppercase tracking-wider font-semibold transition ${
+                      isActive
+                        ? "bg-red-500/10 text-red-400 border border-red-500/20"
+                        : (theme === "light"
+                            ? "text-slate-600 hover:bg-slate-100 hover:text-slate-900 border border-transparent"
+                            : "text-slate-400 hover:bg-white/5 hover:text-white border border-transparent")
+                    }`
+                  }
+                >
+                  {link.icon}
+                  {!isCollapsed && <span>{label}</span>}
+                </NavLink>
+              );
+            })}
           </nav>
         </div>
 
@@ -237,9 +362,24 @@ export function AdminLayout() {
             </div>
           )}
 
+          <button
+            onClick={handleExportPdf}
+            title={isCollapsed ? (language === "en" ? "Export Data" : "Verileri Dışa Aktar") : ""}
+            className={`w-full flex items-center ${isCollapsed ? "justify-center px-0" : "gap-3 px-4"} rounded-xl py-3 text-xs uppercase tracking-wider font-semibold transition cursor-pointer ${
+              theme === "light"
+                ? "text-slate-600 hover:bg-slate-100 hover:text-slate-900 border border-transparent"
+                : "text-slate-400 hover:bg-white/5 hover:text-white border border-transparent"
+            }`}
+          >
+            <svg className="w-5 h-5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M12 4v12m0 0l-4-4m4 4l4-4M4 20h16" />
+            </svg>
+            {!isCollapsed && <span>{language === "en" ? "Export Data" : "Verileri Dışa Aktar"}</span>}
+          </button>
+
           <Link
             to="/"
-            title={isCollapsed ? "Main Site" : ""}
+            title={isCollapsed ? (language === "en" ? "Main Site" : "Ana Site") : ""}
             className={`flex items-center ${isCollapsed ? "justify-center" : "gap-2 px-1"} text-xs uppercase tracking-wider font-semibold ${
               theme === "light" ? "text-slate-500 hover:text-slate-800" : "text-slate-400 hover:text-white"
             }`}
@@ -247,8 +387,9 @@ export function AdminLayout() {
             <svg className="w-5 h-5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
             </svg>
-            {!isCollapsed && <span>Main Site</span>}
+            {!isCollapsed && <span>{language === "en" ? "Main Site" : "Ana Site"}</span>}
           </Link>
+
           <button
             onClick={handleLogout}
             title={isCollapsed ? t("nav.logout") : ""}
@@ -279,8 +420,8 @@ export function AdminLayout() {
             {/* Collapse toggle button */}
             <button
               onClick={() => setIsCollapsed(!isCollapsed)}
-              title={isCollapsed ? "Expand Sidebar" : "Collapse Sidebar"}
-              aria-label={isCollapsed ? "Expand Sidebar" : "Collapse Sidebar"}
+              title={isCollapsed ? t("dashboard.actions.expandSidebar") : t("dashboard.actions.collapseSidebar")}
+              aria-label={isCollapsed ? t("dashboard.actions.expandSidebar") : t("dashboard.actions.collapseSidebar")}
               className={`hidden lg:flex items-center justify-center w-8 h-8 rounded-lg border cursor-pointer transition ${
                 theme === "light"
                   ? "border-slate-200 text-slate-500 hover:text-slate-800 hover:bg-slate-100"
@@ -300,10 +441,10 @@ export function AdminLayout() {
 
             <div>
               <h2 className={`text-sm font-semibold tracking-wider ${theme === "light" ? "text-slate-800" : "text-slate-200"}`}>
-                EVALIS Administration Panel
+                {language === "en" ? "EVALIS Administration Panel" : "EVALIS Yönetim Paneli"}
               </h2>
               <p className="text-[10px] text-slate-500 font-light tracking-wide mt-0.5">
-                System Wide Operations Dashboard
+                {language === "en" ? "System Wide Operations Dashboard" : "Sistem Geneli İşletim Paneli"}
               </p>
             </div>
           </div>
@@ -324,8 +465,8 @@ export function AdminLayout() {
             {/* Theme Toggle Trigger */}
             <button
               onClick={() => setTheme((prev) => (prev === "dark" ? "light" : "dark"))}
-              title={theme === "dark" ? "Switch to Light Theme" : "Switch to Dark Theme"}
-              aria-label={theme === "dark" ? "Switch to Light Theme" : "Switch to Dark Theme"}
+              title={theme === "dark" ? t("dashboard.actions.lightTheme") : t("dashboard.actions.darkTheme")}
+              aria-label={theme === "dark" ? t("dashboard.actions.lightTheme") : t("dashboard.actions.darkTheme")}
               className={`rounded-full border p-2 cursor-pointer transition flex items-center justify-center ${
                 theme === "light"
                   ? "border-slate-200 hover:border-slate-400 text-slate-600"

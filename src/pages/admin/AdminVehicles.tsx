@@ -198,7 +198,6 @@ export function AdminVehicles() {
     // ["vector"] would silently drop any other vehicle (e.g. Cloud) they already own.
     const storedOwned = readStorage<string[]>(userStorageKeys.ownedVehicles(req.userId), []);
     const ownedList = Array.from(new Set([...recordOwned, ...storedOwned]));
-    if (ownedList.length === 0) ownedList.push("vector");
     if (!ownedList.includes(req.modelId)) {
       ownedList.push(req.modelId);
     }
@@ -277,7 +276,7 @@ export function AdminVehicles() {
                         {req.userName}
                       </p>
                       <p className="text-[9px] text-slate-500 font-mono mt-0.5">
-                        {vehicleObj?.name || req.modelId} · Plate: {req.plate} · VIN: {req.vin}
+                        {vehicleObj?.name || req.modelId} · {language === "en" ? "Plate" : "Plaka"}: {req.plate} · VIN: {req.vin}
                       </p>
                     </div>
                   </div>
@@ -317,93 +316,9 @@ export function AdminVehicles() {
           </button>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {vehicles.map((vehicle) => {
-            const ownerCount = getOwnershipCount(vehicle.id);
-            return (
-              <div
-                key={vehicle.id}
-                className="dash-panel overflow-hidden flex flex-col justify-between"
-              >
-                {/* Image */}
-                <div className="aspect-[16/10] bg-slate-900/10 border-b border-slate-200 dark:border-white/5 flex items-center justify-center p-4">
-                  {vehicle.image && (
-                    <img src={vehicle.image} alt={vehicle.name} className="max-h-full max-w-full object-contain" />
-                  )}
-                </div>
-
-                {/* Specs & Stats info */}
-                <div className="p-6 space-y-6">
-                  <div>
-                    <span className="text-[9px] text-accent uppercase tracking-widest block font-bold">
-                      {vehicle.type}
-                    </span>
-                    <h3 className="text-lg font-light uppercase tracking-widest text-slate-800 dark:text-white mt-1">
-                      {vehicle.name}
-                    </h3>
-                    <p className="text-xs text-slate-500 dark:text-slate-400 font-light mt-1.5 leading-relaxed">
-                      {vehicle.tagline}
-                    </p>
-                  </div>
-
-                  {/* Specs list */}
-                  <div className="grid grid-cols-2 gap-4 border-y border-slate-200 dark:border-white/5 py-4 text-xs font-light text-slate-500 dark:text-slate-450">
-                    <div>
-                      <span className="text-[9px] text-slate-500 uppercase tracking-widest block font-bold">Range</span>
-                      <span className="text-slate-800 dark:text-slate-250 mt-1 block font-semibold">{vehicle.specs.range}</span>
-                    </div>
-                    <div>
-                      <span className="text-[9px] text-slate-500 uppercase tracking-widest block font-bold">Power</span>
-                      <span className="text-slate-800 dark:text-slate-250 mt-1 block font-semibold">{vehicle.specs.maxPower}</span>
-                    </div>
-                    <div>
-                      <span className="text-[9px] text-slate-500 uppercase tracking-widest block font-bold font-mono">0-100 KM/H</span>
-                      <span className="text-slate-800 dark:text-slate-250 mt-1 block font-semibold">{vehicle.specs.acceleration}</span>
-                    </div>
-                    <div>
-                      <span className="text-[9px] text-slate-500 uppercase tracking-widest block font-bold">Top Speed</span>
-                      <span className="text-slate-800 dark:text-slate-250 mt-1 block font-semibold">{vehicle.specs.topSpeed}</span>
-                    </div>
-                  </div>
-
-                  {/* Active drivers count + actions */}
-                  <div className="flex justify-between items-center text-xs">
-                    <div className="space-y-0.5">
-                      <span className="text-[9px] text-slate-500 uppercase tracking-widest block font-bold">Active Owners</span>
-                      <span className="text-slate-800 dark:text-white font-semibold text-sm">{ownerCount} {language === "en" ? "drivers" : "sürücü"}</span>
-                    </div>
-                    <div className="flex gap-2 text-[9px] font-bold uppercase tracking-wider">
-                      <button
-                        onClick={() => handleOpenEdit(vehicle)}
-                        className="px-3 py-1.5 rounded-full border border-slate-200 dark:border-white/10 text-slate-600 dark:text-slate-300 hover:border-accent/40 hover:text-accent transition cursor-pointer"
-                      >
-                        {language === "en" ? "Edit" : "Düzenle"}
-                      </button>
-                      <button
-                        onClick={() => handleDelete(vehicle)}
-                        className="px-3 py-1.5 rounded-full border border-red-500/20 text-red-400 hover:bg-red-500/10 transition cursor-pointer"
-                      >
-                        {language === "en" ? "Delete" : "Sil"}
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            );
-          })}
-        </div>
-      </div>
-
-      {/* Create / Edit vehicle modal */}
-      {isFormOpen && (
-        <div
-          className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-6"
-          onClick={resetForm}
-        >
-          <div
-            className="dash-panel max-w-2xl w-full p-6 space-y-6 shadow-2xl bg-white dark:bg-[#0e1423] max-h-[90vh] overflow-y-auto"
-            onClick={(e) => e.stopPropagation()}
-          >
+        {/* Create / Edit vehicle form */}
+        {isFormOpen && (
+          <div className="dash-panel p-6 space-y-6 shadow-2xl animate-fade-in border-accent/25 bg-white dark:bg-[#0e1423]">
             <div className="flex justify-between items-center border-b border-slate-200 dark:border-white/5 pb-3">
               <h3 className="text-xs font-bold tracking-wider text-slate-800 dark:text-white uppercase">
                 {editingVehicle
@@ -429,7 +344,7 @@ export function AdminVehicles() {
                     type="text"
                     value={form.name}
                     onChange={(e) => setForm({ ...form, name: e.target.value })}
-                    placeholder="e.g. Nimbus"
+                    placeholder={language === "en" ? "e.g. Nimbus" : "örn. Nimbus"}
                     className="w-full bg-slate-50 dark:bg-black/40 border border-slate-200 dark:border-white/10 rounded-xl px-4 py-3 text-slate-800 dark:text-slate-200 outline-none"
                     required
                   />
@@ -442,7 +357,7 @@ export function AdminVehicles() {
                     type="text"
                     value={form.type}
                     onChange={(e) => setForm({ ...form, type: e.target.value })}
-                    placeholder="e.g. Electric Crossover"
+                    placeholder={language === "en" ? "e.g. Electric Crossover" : "örn. Elektrikli Crossover"}
                     className="w-full bg-slate-50 dark:bg-black/40 border border-slate-200 dark:border-white/10 rounded-xl px-4 py-3 text-slate-800 dark:text-slate-200 outline-none"
                     required
                   />
@@ -526,7 +441,7 @@ export function AdminVehicles() {
                 </div>
                 <div className="space-y-1">
                   <label className="text-[10px] text-slate-500 uppercase tracking-widest block font-semibold">
-                    0-100 km/h
+                    {language === "en" ? "0-100 km/h" : "0-100 km/s"}
                   </label>
                   <input
                     type="text"
@@ -596,8 +511,85 @@ export function AdminVehicles() {
               </div>
             </form>
           </div>
+        )}
+
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {vehicles.map((vehicle) => {
+            const ownerCount = getOwnershipCount(vehicle.id);
+            return (
+              <div
+                key={vehicle.id}
+                className="dash-panel overflow-hidden flex flex-col justify-between"
+              >
+                {/* Image */}
+                <div className="aspect-[16/10] bg-slate-900/10 border-b border-slate-200 dark:border-white/5 flex items-center justify-center p-4">
+                  {vehicle.image && (
+                    <img src={vehicle.image} alt={vehicle.name} className="max-h-full max-w-full object-contain" />
+                  )}
+                </div>
+
+                {/* Specs & Stats info */}
+                <div className="p-6 space-y-6">
+                  <div>
+                    <span className="text-[9px] text-accent uppercase tracking-widest block font-bold">
+                      {vehicle.type}
+                    </span>
+                    <h3 className="text-lg font-light uppercase tracking-widest text-slate-800 dark:text-white mt-1">
+                      {vehicle.name}
+                    </h3>
+                    <p className="text-xs text-slate-500 dark:text-slate-400 font-light mt-1.5 leading-relaxed">
+                      {vehicle.tagline}
+                    </p>
+                  </div>
+
+                  {/* Specs list */}
+                  <div className="grid grid-cols-2 gap-4 border-y border-slate-200 dark:border-white/5 py-4 text-xs font-light text-slate-500 dark:text-slate-450">
+                    <div>
+                      <span className="text-[9px] text-slate-500 uppercase tracking-widest block font-bold">{language === "en" ? "Range" : "Menzil"}</span>
+                      <span className="text-slate-800 dark:text-slate-250 mt-1 block font-semibold">{vehicle.specs.range}</span>
+                    </div>
+                    <div>
+                      <span className="text-[9px] text-slate-500 uppercase tracking-widest block font-bold">{language === "en" ? "Power" : "Güç"}</span>
+                      <span className="text-slate-800 dark:text-slate-250 mt-1 block font-semibold">{vehicle.specs.maxPower}</span>
+                    </div>
+                    <div>
+                      <span className="text-[9px] text-slate-500 uppercase tracking-widest block font-bold font-mono">{language === "en" ? "0-100 KM/H" : "0-100 KM/S"}</span>
+                      <span className="text-slate-800 dark:text-slate-250 mt-1 block font-semibold">{vehicle.specs.acceleration}</span>
+                    </div>
+                    <div>
+                      <span className="text-[9px] text-slate-500 uppercase tracking-widest block font-bold">{language === "en" ? "Top Speed" : "Maks. Hız"}</span>
+                      <span className="text-slate-800 dark:text-slate-250 mt-1 block font-semibold">{vehicle.specs.topSpeed}</span>
+                    </div>
+                  </div>
+
+                  {/* Active drivers count + actions */}
+                  <div className="flex justify-between items-center text-xs">
+                    <div className="space-y-0.5">
+                      <span className="text-[9px] text-slate-500 uppercase tracking-widest block font-bold">{language === "en" ? "Active Owners" : "Aktif Sahip"}</span>
+                      <span className="text-slate-800 dark:text-white font-semibold text-sm">{ownerCount} {language === "en" ? "drivers" : "sürücü"}</span>
+                    </div>
+                    <div className="flex gap-2 text-[9px] font-bold uppercase tracking-wider">
+                      <button
+                        onClick={() => handleOpenEdit(vehicle)}
+                        className="px-3 py-1.5 rounded-full border border-slate-200 dark:border-white/10 text-slate-600 dark:text-slate-300 hover:border-accent/40 hover:text-accent transition cursor-pointer"
+                      >
+                        {language === "en" ? "Edit" : "Düzenle"}
+                      </button>
+                      <button
+                        onClick={() => handleDelete(vehicle)}
+                        className="px-3 py-1.5 rounded-full border border-red-500/20 text-red-400 hover:bg-red-500/10 transition cursor-pointer"
+                      >
+                        {language === "en" ? "Delete" : "Sil"}
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            );
+          })}
         </div>
-      )}
+      </div>
+
     </div>
   );
 }

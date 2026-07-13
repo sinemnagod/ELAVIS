@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useLocation } from "react-router-dom";
 import { useLanguage } from "@/i18n/LanguageContext";
 import { useAuth } from "@/context/AuthContext";
 
@@ -15,6 +15,8 @@ export function Login() {
   const { t, language, changeLanguage } = useLanguage();
   const { login } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
+  const from = (location.state as { from?: string } | null)?.from;
 
   // Form states
   const [email, setEmail] = useState("");
@@ -41,7 +43,9 @@ export function Login() {
 
       if (success) {
         const isAdmin = email.toLowerCase() === "admin@evalis.com";
-        if (isAdmin) {
+        if (from && !isAdmin) {
+          navigate(from);
+        } else if (isAdmin) {
           navigate("/admin");
         } else {
           navigate("/dashboard");
@@ -127,7 +131,7 @@ export function Login() {
         <div className="w-full max-w-sm bg-[#222224]/85 border border-white/10 rounded-3xl p-6 md:p-8 space-y-6 shadow-2xl animate-scale-up">
             <div className="space-y-1.5">
               <span className="text-[9px] uppercase tracking-[0.25em] text-accent font-semibold block">
-                EVALIS SECURE
+                {language === "en" ? "EVALIS SECURE" : "EVALIS GÜVENLİ"}
               </span>
               <h2 className="text-2xl font-light uppercase tracking-widest text-white">
                 {t("cta.login")}
@@ -146,7 +150,7 @@ export function Login() {
             <form onSubmit={handleSubmit} className="space-y-4">
               <div className="space-y-2">
                 <span className="text-[9px] text-slate-400 uppercase tracking-widest block font-medium">
-                  Email Address
+                  {language === "en" ? "Email Address" : "E-posta Adresi"}
                 </span>
                 <input
                   type="email"
@@ -161,7 +165,7 @@ export function Login() {
 
               <div className="space-y-2">
                 <span className="text-[9px] text-slate-400 uppercase tracking-widest block font-medium">
-                  Password
+                  {language === "en" ? "Password" : "Şifre"}
                 </span>
                 <input
                   type="password"
@@ -189,7 +193,7 @@ export function Login() {
                   onClick={(e) => e.preventDefault()}
                   className="text-accent hover:underline font-medium"
                 >
-                  Forgot Password?
+                  {language === "en" ? "Forgot Password?" : "Şifremi Unuttum?"}
                 </a>
               </div>
 
@@ -208,9 +212,9 @@ export function Login() {
 
             {/* Demo Credentials hint */}
             <div className="bg-white/5 border border-white/5 rounded-2xl p-4 space-y-1.5 text-[10px] font-light text-slate-400">
-              <p className="font-semibold text-accent uppercase tracking-wider">Demo Credentials:</p>
-              <p>• Customer: <span className="font-mono text-white">customer@evalis.com</span></p>
-              <p>• Admin: <span className="font-mono text-white">admin@evalis.com</span></p>
+              <p className="font-semibold text-accent uppercase tracking-wider">{language === "en" ? "Demo Credentials:" : "Demo Bilgileri:"}</p>
+              <p>• {language === "en" ? "Customer" : "Müşteri"}: <span className="font-mono text-white">customer@evalis.com</span></p>
+              <p>• {language === "en" ? "Admin" : "Yönetici"}: <span className="font-mono text-white">admin@evalis.com</span></p>
             </div>
 
             {/* Social logins */}

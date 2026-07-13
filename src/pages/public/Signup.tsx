@@ -3,6 +3,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { useLanguage } from "@/i18n/LanguageContext";
 import { useAuth } from "@/context/AuthContext";
 import { readStorage, writeStorage, storageKeys } from "@/lib/storage";
+import { formatPhoneInput } from "@/lib/phone";
 import usersData from "@/data/users.json";
 import { User } from "@/types";
 
@@ -140,7 +141,7 @@ export function Signup() {
         <div className="w-full max-w-sm bg-[#222224]/85 border border-white/10 rounded-3xl p-6 md:p-8 space-y-6 shadow-2xl animate-scale-up">
           <div className="space-y-1.5">
             <span className="text-[9px] uppercase tracking-[0.25em] text-accent font-semibold block">
-              EVALIS SECURE
+              {language === "en" ? "EVALIS SECURE" : "EVALIS GÜVENLİ"}
             </span>
             <h2 className="text-2xl font-light uppercase tracking-widest text-white">
               {t("cta.signUp")}
@@ -167,7 +168,7 @@ export function Signup() {
                 type="text"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
-                placeholder="Jane Doe"
+                placeholder={language === "en" ? "Jane Doe" : "Ahmet Yılmaz"}
                 className="w-full rounded-xl border border-white/10 bg-black/40 px-4 py-3 text-sm text-slate-200 outline-none focus:border-accent transition"
                 required
                 disabled={submitting}
@@ -195,8 +196,9 @@ export function Signup() {
               </span>
               <input
                 type="tel"
+                inputMode="tel"
                 value={phone}
-                onChange={(e) => setPhone(e.target.value)}
+                onChange={(e) => setPhone(formatPhoneInput(e.target.value))}
                 placeholder="+90 555 123 45 67"
                 className="w-full rounded-xl border border-white/10 bg-black/40 px-4 py-3 text-sm text-slate-200 outline-none focus:border-accent transition"
                 required

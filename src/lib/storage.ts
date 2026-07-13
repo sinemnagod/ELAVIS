@@ -18,7 +18,8 @@ export const storageKeys = {
   adminTheme: "evalis.admin.theme",
   adminSidebarCollapsed: "evalis.admin.sidebarCollapsed",
   vehicleRequests: "evalis.vehicleRequests",
-  allReservations: "evalis.allReservations"
+  allReservations: "evalis.allReservations",
+  supportTickets: "evalis.supportTickets"
 } as const;
 
 export const userStorageKeys = {
@@ -35,7 +36,8 @@ export const userStorageKeys = {
   telemetry: (userId: string, vehicleId: string) => `evalis.telemetry.${userId}.${vehicleId}`,
   rewardsPoints: (userId: string) => `evalis.rewardsPoints.${userId}`,
   reservationExpiry: (userId: string) => `evalis.reservationExpiry.${userId}`,
-  liveCharging: (userId: string) => `evalis.liveCharging.${userId}`
+  liveCharging: (userId: string, vehicleId: string) => `evalis.liveCharging.${userId}.${vehicleId}`,
+  scheduleLastFired: (userId: string) => `evalis.scheduleLastFired.${userId}`
 } as const;
 
 export function readStorage<T>(key: string, fallback: T): T {

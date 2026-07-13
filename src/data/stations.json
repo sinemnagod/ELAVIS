@@ -9,7 +9,13 @@
     "totalPorts": 12,
     "status": "active",
     "type": "DC",
-    "connector": "CCS2"
+    "connector": "CCS2",
+    "network": "EVALIS",
+    "pricePerKwhUSD": 0.36,
+    "pricePerKwhTRY": 12.2,
+    "rating": 4.8,
+    "reviewCount": 342,
+    "amenities": ["wifi", "cafe", "restroom", "247"]
   },
   {
     "id": "sta-02",
@@ -21,7 +27,13 @@
     "totalPorts": 6,
     "status": "active",
     "type": "DC",
-    "connector": "CCS2"
+    "connector": "CCS2",
+    "network": "EVALIS",
+    "pricePerKwhUSD": 0.35,
+    "pricePerKwhTRY": 11.9,
+    "rating": 4.5,
+    "reviewCount": 189,
+    "amenities": ["wifi", "restroom"]
   },
   {
     "id": "sta-03",
@@ -33,7 +45,13 @@
     "totalPorts": 16,
     "status": "active",
     "type": "DC",
-    "connector": "CCS2"
+    "connector": "CCS2",
+    "network": "EVALIS",
+    "pricePerKwhUSD": 0.34,
+    "pricePerKwhTRY": 11.6,
+    "rating": 4.7,
+    "reviewCount": 410,
+    "amenities": ["wifi", "cafe", "restroom", "covered", "247"]
   },
   {
     "id": "sta-04",
@@ -45,7 +63,13 @@
     "totalPorts": 4,
     "status": "active",
     "type": "AC",
-    "connector": "Type 2"
+    "connector": "Type 2",
+    "network": "EVALIS",
+    "pricePerKwhUSD": 0.32,
+    "pricePerKwhTRY": 10.9,
+    "rating": 4.2,
+    "reviewCount": 76,
+    "amenities": ["restroom"]
   },
   {
     "id": "sta-05",
@@ -57,7 +81,13 @@
     "totalPorts": 6,
     "status": "maintenance",
     "type": "DC",
-    "connector": "CCS2"
+    "connector": "CCS2",
+    "network": "EVALIS",
+    "pricePerKwhUSD": 0.35,
+    "pricePerKwhTRY": 11.9,
+    "rating": 4.0,
+    "reviewCount": 58,
+    "amenities": ["wifi"]
   },
   {
     "id": "sta-06",
@@ -69,7 +99,13 @@
     "totalPorts": 8,
     "status": "active",
     "type": "DC",
-    "connector": "CCS2"
+    "connector": "CCS2",
+    "network": "EVALIS",
+    "pricePerKwhUSD": 0.36,
+    "pricePerKwhTRY": 12.2,
+    "rating": 4.6,
+    "reviewCount": 233,
+    "amenities": ["wifi", "cafe", "247"]
   },
   {
     "id": "sta-07",
@@ -81,7 +117,13 @@
     "totalPorts": 6,
     "status": "active",
     "type": "DC",
-    "connector": "CCS2"
+    "connector": "CCS2",
+    "network": "EVALIS",
+    "pricePerKwhUSD": 0.33,
+    "pricePerKwhTRY": 11.2,
+    "rating": 4.4,
+    "reviewCount": 121,
+    "amenities": ["restroom", "covered"]
   },
   {
     "id": "sta-08",
@@ -93,7 +135,13 @@
     "totalPorts": 10,
     "status": "active",
     "type": "DC",
-    "connector": "CCS2"
+    "connector": "CCS2",
+    "network": "EVALIS",
+    "pricePerKwhUSD": 0.35,
+    "pricePerKwhTRY": 11.9,
+    "rating": 4.7,
+    "reviewCount": 265,
+    "amenities": ["wifi", "cafe", "restroom"]
   },
   {
     "id": "sta-09",
@@ -105,7 +153,13 @@
     "totalPorts": 8,
     "status": "active",
     "type": "DC",
-    "connector": "CCS2"
+    "connector": "CCS2",
+    "network": "EVALIS",
+    "pricePerKwhUSD": 0.37,
+    "pricePerKwhTRY": 12.6,
+    "rating": 4.9,
+    "reviewCount": 501,
+    "amenities": ["wifi", "cafe", "restroom", "covered", "247"]
   },
   {
     "id": "sta-10",
@@ -117,7 +171,13 @@
     "totalPorts": 4,
     "status": "active",
     "type": "AC",
-    "connector": "Type 2"
+    "connector": "Type 2",
+    "network": "EVALIS",
+    "pricePerKwhUSD": 0.3,
+    "pricePerKwhTRY": 10.2,
+    "rating": 4.1,
+    "reviewCount": 64,
+    "amenities": ["restroom"]
   },
   {
     "id": "sta-11",
@@ -129,7 +189,13 @@
     "totalPorts": 10,
     "status": "active",
     "type": "DC",
-    "connector": "CCS2"
+    "connector": "CCS2",
+    "network": "EVALIS",
+    "pricePerKwhUSD": 0.36,
+    "pricePerKwhTRY": 12.2,
+    "rating": 4.6,
+    "reviewCount": 198,
+    "amenities": ["wifi", "cafe", "covered"]
   },
   {
     "id": "sta-12",
@@ -141,7 +207,13 @@
     "totalPorts": 8,
     "status": "maintenance",
     "type": "DC",
-    "connector": "CCS2"
+    "connector": "CCS2",
+    "network": "EVALIS",
+    "pricePerKwhUSD": 0.35,
+    "pricePerKwhTRY": 11.9,
+    "rating": 3.9,
+    "reviewCount": 47,
+    "amenities": ["wifi"]
   },
   {
     "id": "sta-13",
@@ -153,7 +225,13 @@
     "totalPorts": 4,
     "status": "active",
     "type": "AC",
-    "connector": "Type 2"
+    "connector": "Type 2",
+    "network": "EVALIS",
+    "pricePerKwhUSD": 0.28,
+    "pricePerKwhTRY": 9.5,
+    "rating": 4.0,
+    "reviewCount": 39,
+    "amenities": ["restroom"]
   },
   {
     "id": "sta-14",
@@ -165,7 +243,13 @@
     "totalPorts": 12,
     "status": "active",
     "type": "DC",
-    "connector": "CCS2"
+    "connector": "CCS2",
+    "network": "EVALIS",
+    "pricePerKwhUSD": 0.34,
+    "pricePerKwhTRY": 11.6,
+    "rating": 4.5,
+    "reviewCount": 176,
+    "amenities": ["wifi", "restroom", "247"]
   },
   {
     "id": "sta-15",
@@ -177,6 +261,102 @@
     "totalPorts": 2,
     "status": "active",
     "type": "AC",
-    "connector": "Type 2"
+    "connector": "Type 2",
+    "network": "EVALIS",
+    "pricePerKwhUSD": 0.29,
+    "pricePerKwhTRY": 9.9,
+    "rating": 4.3,
+    "reviewCount": 88,
+    "amenities": ["cafe", "covered"]
+  },
+  {
+    "id": "sta-16",
+    "name": "VoltLine Üsküdar Charge Point",
+    "latitude": 41.0226,
+    "longitude": 29.015,
+    "power": "180 kW",
+    "availablePorts": 6,
+    "totalPorts": 10,
+    "status": "active",
+    "type": "DC",
+    "connector": "CCS2",
+    "network": "VoltLine",
+    "pricePerKwhUSD": 0.3,
+    "pricePerKwhTRY": 10.3,
+    "rating": 4.3,
+    "reviewCount": 152,
+    "amenities": ["wifi", "restroom"]
+  },
+  {
+    "id": "sta-17",
+    "name": "GridCharge Bakırköy Hub",
+    "latitude": 40.9819,
+    "longitude": 28.8772,
+    "power": "120 kW",
+    "availablePorts": 3,
+    "totalPorts": 6,
+    "status": "active",
+    "type": "DC",
+    "connector": "CCS2",
+    "network": "GridCharge",
+    "pricePerKwhUSD": 0.4,
+    "pricePerKwhTRY": 13.6,
+    "rating": 3.8,
+    "reviewCount": 94,
+    "amenities": ["restroom"]
+  },
+  {
+    "id": "sta-18",
+    "name": "CityVolt Şişli Charger",
+    "latitude": 41.0602,
+    "longitude": 28.9877,
+    "power": "22 kW",
+    "availablePorts": 2,
+    "totalPorts": 4,
+    "status": "active",
+    "type": "AC",
+    "connector": "Type 2",
+    "network": "CityVolt",
+    "pricePerKwhUSD": 0.25,
+    "pricePerKwhTRY": 8.5,
+    "rating": 4.1,
+    "reviewCount": 61,
+    "amenities": ["cafe"]
+  },
+  {
+    "id": "sta-19",
+    "name": "EnerJet Kızılay Point",
+    "latitude": 39.9208,
+    "longitude": 32.8541,
+    "power": "200 kW",
+    "availablePorts": 5,
+    "totalPorts": 8,
+    "status": "active",
+    "type": "DC",
+    "connector": "CCS2",
+    "network": "EnerJet",
+    "pricePerKwhUSD": 0.38,
+    "pricePerKwhTRY": 12.9,
+    "rating": 4.4,
+    "reviewCount": 137,
+    "amenities": ["wifi", "cafe", "247"]
+  },
+  {
+    "id": "sta-20",
+    "name": "ChargeNow Karşıyaka Hub",
+    "latitude": 38.4614,
+    "longitude": 27.1089,
+    "power": "11 kW",
+    "availablePorts": 1,
+    "totalPorts": 2,
+    "status": "active",
+    "type": "AC",
+    "connector": "Type 2",
+    "network": "ChargeNow",
+    "pricePerKwhUSD": 0.22,
+    "pricePerKwhTRY": 7.5,
+    "rating": 3.6,
+    "reviewCount": 28,
+    "amenities": []
   }
 ]

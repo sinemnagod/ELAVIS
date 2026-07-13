@@ -336,7 +336,7 @@ export function AdminProducts() {
                   type="text"
                   value={name}
                   onChange={(e) => setName(e.target.value)}
-                  placeholder="e.g. Wall Connector (Gen 3)"
+                  placeholder={language === "en" ? "e.g. Wall Connector (Gen 3)" : "örn. Duvar Konektörü (Gen 3)"}
                   className="w-full bg-slate-50 dark:bg-black/40 border border-slate-200 dark:border-white/10 rounded-xl px-4 py-3 text-slate-800 dark:text-slate-200 outline-none"
                   required
                 />

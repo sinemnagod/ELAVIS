@@ -1,4 +1,5 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
+import { Link } from "react-router-dom";
 import { readStorage, writeStorage, storageKeys, userStorageKeys } from "@/lib/storage";
 import { useToast } from "@/context/ToastContext";
 import { useAuth } from "@/context/AuthContext";
@@ -9,22 +10,10 @@ import { ChargingSchedule, Station, Vehicle } from "@/types";
 
 const daysOfWeek = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
 
-function createSeedSchedule(userId: string, vehicleId: string): ChargingSchedule[] {
-  return [
-    {
-      id: "sch-01",
-      userId,
-      vehicleId,
-      mode: "home",
-      departureTime: "07:30",
-      days: ["Mon", "Tue", "Wed", "Thu", "Fri"],
-      precondition: true,
-      limit: 80,
-      active: true,
-      createdAt: new Date().toISOString()
-    }
-  ];
-}
+// Display-only Turkish labels for the English day codes used for storage/matching (see scheduleRunner.ts DAY_CODES).
+const dayLabelsTr: Record<string, string> = {
+  Mon: "Pzt", Tue: "Sal", Wed: "Çar", Thu: "Per", Fri: "Cum", Sat: "Cmt", Sun: "Paz"
+};
 
 export function ChargingSchedules() {
   const { showToast } = useToast();
@@ -38,13 +27,8 @@ export function ChargingSchedules() {
   const ownedVehicles = vehicles.filter((vehicle) => user?.ownedVehicleIds.includes(vehicle.id));
   const fallbackVehicle = ownedVehicles[0] || vehicles[0];
 
-  const seedSchedules = useMemo(
-    () => createSeedSchedule(userId, fallbackVehicle.id),
-    [fallbackVehicle.id, userId]
-  );
-
   const [schedules, setSchedules] = useState<ChargingSchedule[]>(() =>
-    readStorage<ChargingSchedule[]>(userStorageKeys.schedules(userId), seedSchedules)
+    readStorage<ChargingSchedule[]>(userStorageKeys.schedules(userId), [])
   );
 
   const [editingScheduleId, setEditingScheduleId] = useState<string | null>(null);
@@ -57,15 +41,15 @@ export function ChargingSchedules() {
   const [limit, setLimit] = useState(80);
 
   useEffect(() => {
-    const next = readStorage<ChargingSchedule[]>(userStorageKeys.schedules(userId), seedSchedules);
-    setSchedules(next);
+    setSchedules(readStorage<ChargingSchedule[]>(userStorageKeys.schedules(userId), []));
     setVehicleId(fallbackVehicle.id);
-  }, [fallbackVehicle.id, seedSchedules, userId]);
+  }, [fallbackVehicle.id, userId]);
 
   useEffect(() => {
+    if (ownedVehicles.length === 0) return;
     writeStorage(userStorageKeys.schedules(userId), schedules);
     writeStorage(storageKeys.schedules, schedules);
-  }, [schedules, userId]);
+  }, [schedules, userId, ownedVehicles.length]);
 
   const resetForm = () => {
     setEditingScheduleId(null);
@@ -160,6 +144,27 @@ export function ChargingSchedules() {
   const getVehicleName = (id: string) => vehicles.find((vehicle) => vehicle.id === id)?.name || id;
   const getStationName = (id?: string) =>
     id ? stations.find((station) => station.id === id)?.name || id : language === "en" ? "Home Charging" : "Ev Şarjı";
+
+  if (ownedVehicles.length === 0) {
+    return (
+      <div className="dash-panel p-12 flex flex-col items-center text-center gap-4 animate-fade-in">
+        <h2 className="text-lg font-light uppercase tracking-widest text-slate-100">
+          {language === "en" ? "No Vehicle to Schedule" : "Programlanacak Araç Yok"}
+        </h2>
+        <p className="text-xs text-slate-500 font-light max-w-sm">
+          {language === "en"
+            ? "Add a vehicle to your fleet before creating a charging schedule."
+            : "Şarj programı oluşturmadan önce filonuza bir araç ekleyin."}
+        </p>
+        <Link
+          to="/dashboard/vehicles"
+          className="rounded-full bg-accent text-black px-6 py-3 text-xs font-bold uppercase tracking-widest hover:bg-[#348c70] transition duration-300"
+        >
+          {language === "en" ? "Add a Vehicle" : "Araç Ekle"}
+        </Link>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-8 animate-fade-in pb-10">
@@ -269,7 +274,7 @@ export function ChargingSchedules() {
                           : "border-white/10 bg-white/5 text-slate-400 hover:bg-white/10"
                       }`}
                     >
-                      {day}
+                      {language === "en" ? day : dayLabelsTr[day] || day}
                     </button>
                   );
                 })}
@@ -366,13 +371,13 @@ export function ChargingSchedules() {
                       </div>
                       <div className="flex flex-wrap gap-1.5 text-[8px] uppercase tracking-wider text-slate-400 font-semibold">
                         {schedule.days.map((day) => (
-                          <span key={day} className="px-1.5 py-0.5 bg-white/5 rounded-md">{day}</span>
+                          <span key={day} className="px-1.5 py-0.5 bg-white/5 rounded-md">{language === "en" ? day : dayLabelsTr[day] || day}</span>
                         ))}
                       </div>
                       <div className="flex items-center gap-4 text-[9px] text-slate-500 font-mono pt-1">
                         <span>{language === "en" ? "Limit" : "Limit"}: {schedule.limit}%</span>
                         <span>·</span>
-                        <span>{language === "en" ? "Precondition" : "Hazırlık"}: {schedule.precondition ? "ON" : "OFF"}</span>
+                        <span>{language === "en" ? "Precondition" : "Hazırlık"}: {schedule.precondition ? (language === "en" ? "ON" : "AÇIK") : (language === "en" ? "OFF" : "KAPALI")}</span>
                       </div>
                     </div>
 

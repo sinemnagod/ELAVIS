@@ -34,19 +34,21 @@ export function Charging() {
     const batteryCapacityKWh = currentStats.battery;
     const requiredKWh = (batteryCapacityKWh * chargeTarget) / 100;
     
+    const hoursUnit = language === "en" ? "hrs" : "sa";
+    const minsUnit = language === "en" ? "mins" : "dk";
     if (powerKW === 2.3) {
       const hours = requiredKWh / 2.3;
-      return hours > 24 ? "24+ hours" : `${Math.round(hours)} hrs`;
+      return hours > 24 ? (language === "en" ? "24+ hours" : "24+ saat") : `${Math.round(hours)} ${hoursUnit}`;
     }
     if (powerKW === 22) {
       const hours = requiredKWh / 22;
-      return `${hours.toFixed(1)} hrs`;
+      return `${hours.toFixed(1)} ${hoursUnit}`;
     }
     if (powerKW === 250) {
       const minutes = (requiredKWh / 250) * 60;
-      return `${Math.round(minutes + 8)} mins`; // Include ramp-up delay
+      return `${Math.round(minutes + 8)} ${minsUnit}`; // Include ramp-up delay
     }
-    return "N/A";
+    return language === "en" ? "N/A" : "Yok";
   };
 
   return (
@@ -128,19 +130,19 @@ export function Charging() {
             </h3>
             <div className="grid grid-cols-2 gap-6 text-xs">
               <div>
-                <span className="text-[10px] text-slate-500 uppercase tracking-widest block">Output Power</span>
+                <span className="text-[10px] text-slate-500 uppercase tracking-widest block">{language === "en" ? "Output Power" : "Çıkış Gücü"}</span>
                 <span className="text-sm text-slate-200 mt-1 block font-mono">22 kW AC (3-Phase)</span>
               </div>
               <div>
-                <span className="text-[10px] text-slate-500 uppercase tracking-widest block">Connector Type</span>
+                <span className="text-[10px] text-slate-500 uppercase tracking-widest block">{language === "en" ? "Connector Type" : "Konnektör Tipi"}</span>
                 <span className="text-sm text-slate-200 mt-1 block font-mono">Type 2 (IEC 62196)</span>
               </div>
               <div>
-                <span className="text-[10px] text-slate-500 uppercase tracking-widest block">Voltage / Current</span>
+                <span className="text-[10px] text-slate-500 uppercase tracking-widest block">{language === "en" ? "Voltage / Current" : "Voltaj / Akım"}</span>
                 <span className="text-sm text-slate-200 mt-1 block font-mono">400 V / 32 A</span>
               </div>
               <div>
-                <span className="text-[10px] text-slate-500 uppercase tracking-widest block">Connectivity</span>
+                <span className="text-[10px] text-slate-500 uppercase tracking-widest block">{language === "en" ? "Connectivity" : "Bağlantı"}</span>
                 <span className="text-sm text-slate-200 mt-1 block font-mono">Wi-Fi, BLE, OCPP</span>
               </div>
             </div>
@@ -173,19 +175,19 @@ export function Charging() {
             </h3>
             <div className="grid grid-cols-2 gap-6 text-xs">
               <div>
-                <span className="text-[10px] text-slate-500 uppercase tracking-widest block">Charging Power</span>
+                <span className="text-[10px] text-slate-500 uppercase tracking-widest block">{language === "en" ? "Charging Power" : "Şarj Gücü"}</span>
                 <span className="text-sm text-accent mt-1 block font-mono">Up to 250 kW DC</span>
               </div>
               <div>
-                <span className="text-[10px] text-slate-500 uppercase tracking-widest block">Charge Rate</span>
+                <span className="text-[10px] text-slate-500 uppercase tracking-widest block">{language === "en" ? "Charge Rate" : "Şarj Hızı"}</span>
                 <span className="text-sm text-slate-200 mt-1 block font-mono">150 km in 7 mins</span>
               </div>
               <div>
-                <span className="text-[10px] text-slate-500 uppercase tracking-widest block">Cable System</span>
+                <span className="text-[10px] text-slate-500 uppercase tracking-widest block">{language === "en" ? "Cable System" : "Kablo Sistemi"}</span>
                 <span className="text-sm text-slate-200 mt-1 block font-mono">Liquid-Cooled</span>
               </div>
               <div>
-                <span className="text-[10px] text-slate-500 uppercase tracking-widest block">Authorization</span>
+                <span className="text-[10px] text-slate-500 uppercase tracking-widest block">{language === "en" ? "Authorization" : "Yetkilendirme"}</span>
                 <span className="text-sm text-slate-200 mt-1 block font-mono">Plug & Charge</span>
               </div>
             </div>
@@ -280,7 +282,7 @@ export function Charging() {
             <div className="space-y-6">
               <div className="space-y-2">
                 <div className="flex justify-between items-center text-xs">
-                  <span className="uppercase text-slate-400 tracking-wider">Target Charge Percent</span>
+                  <span className="uppercase text-slate-400 tracking-wider">{language === "en" ? "Target Charge Percent" : "Hedef Şarj Yüzdesi"}</span>
                   <span className="font-semibold text-white text-sm">{chargeTarget}%</span>
                 </div>
                 <input
@@ -296,11 +298,11 @@ export function Charging() {
               {/* Specs Summary */}
               <div className="bg-white/[0.02] border border-white/5 rounded-2xl p-4 grid grid-cols-2 gap-4 text-xs font-light">
                 <div>
-                  <span className="text-slate-500 uppercase tracking-widest text-[9px]">Battery Capacity</span>
+                  <span className="text-slate-500 uppercase tracking-widest text-[9px]">{language === "en" ? "Battery Capacity" : "Batarya Kapasitesi"}</span>
                   <span className="text-slate-200 mt-1 block font-mono">{currentStats.battery} kWh</span>
                 </div>
                 <div>
-                  <span className="text-slate-500 uppercase tracking-widest text-[9px]">Estimated Range</span>
+                  <span className="text-slate-500 uppercase tracking-widest text-[9px]">{language === "en" ? "Estimated Range" : "Tahmini Menzil"}</span>
                   <span className="text-slate-200 mt-1 block font-mono">{calculatedRange} km</span>
                 </div>
               </div>
@@ -311,8 +313,8 @@ export function Charging() {
               {/* Row 1: Wall Outlet */}
               <div className="flex justify-between items-center bg-white/[0.01] border border-white/5 p-4 rounded-2xl hover:border-white/10 transition">
                 <div>
-                  <h4 className="text-xs font-semibold text-slate-200 uppercase tracking-wider">Standard Outlet</h4>
-                  <p className="text-[10px] text-slate-500 font-light mt-0.5">2.3 kW AC (Grid Outlet)</p>
+                  <h4 className="text-xs font-semibold text-slate-200 uppercase tracking-wider">{language === "en" ? "Standard Outlet" : "Standart Priz"}</h4>
+                  <p className="text-[10px] text-slate-500 font-light mt-0.5">{language === "en" ? "2.3 kW AC (Grid Outlet)" : "2.3 kW AC (Şebeke Prizi)"}</p>
                 </div>
                 <span className="text-xs text-red-400 font-mono font-bold">
                   ~ {getChargeTimeText(2.3)}
@@ -322,8 +324,8 @@ export function Charging() {
               {/* Row 2: Wallbox */}
               <div className="flex justify-between items-center bg-white/[0.01] border border-white/5 p-4 rounded-2xl hover:border-white/10 transition">
                 <div>
-                  <h4 className="text-xs font-semibold text-slate-200 uppercase tracking-wider">EVALIS Wallbox</h4>
-                  <p className="text-[10px] text-slate-500 font-light mt-0.5">22 kW AC (Home/Office Charger)</p>
+                  <h4 className="text-xs font-semibold text-slate-200 uppercase tracking-wider">{language === "en" ? "EVALIS Wallbox" : "EVALIS Duvar Kutusu"}</h4>
+                  <p className="text-[10px] text-slate-500 font-light mt-0.5">{language === "en" ? "22 kW AC (Home/Office Charger)" : "22 kW AC (Ev/Ofis Şarj Cihazı)"}</p>
                 </div>
                 <span className="text-xs text-accent font-mono font-bold">
                   ~ {getChargeTimeText(22)}
@@ -334,7 +336,7 @@ export function Charging() {
               <div className="flex justify-between items-center bg-white/[0.01] border border-white/5 p-4 rounded-2xl hover:border-white/10 transition">
                 <div>
                   <h4 className="text-xs font-semibold text-slate-200 uppercase tracking-wider">EVALIS Supercharger</h4>
-                  <p className="text-[10px] text-slate-500 font-light mt-0.5">250 kW DC (High-voltage terminal)</p>
+                  <p className="text-[10px] text-slate-500 font-light mt-0.5">{language === "en" ? "250 kW DC (High-voltage terminal)" : "250 kW DC (Yüksek voltaj terminali)"}</p>
                 </div>
                 <span className="text-xs text-emerald-400 font-mono font-bold">
                   ~ {getChargeTimeText(250)}
@@ -358,7 +360,7 @@ export function Charging() {
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
           <div className="bg-white/[0.01] border border-white/5 rounded-3xl p-6 space-y-4 hover:border-white/10 transition duration-300">
-            <h3 className="text-sm font-semibold tracking-wider text-white uppercase">Off-Peak Cost Reduction</h3>
+            <h3 className="text-sm font-semibold tracking-wider text-white uppercase">{language === "en" ? "Off-Peak Cost Reduction" : "Düşük Tarife Maliyet Avantajı"}</h3>
             <p className="text-xs text-slate-400 font-light leading-relaxed">
               {language === "en"
                 ? "Schedule your EVALIS to charge during overnight hours when electrical grid tariffs are significantly cheaper, lowering your monthly energy expenditures automatically."
@@ -367,7 +369,7 @@ export function Charging() {
           </div>
 
           <div className="bg-white/[0.01] border border-white/5 rounded-3xl p-6 space-y-4 hover:border-white/10 transition duration-300">
-            <h3 className="text-sm font-semibold tracking-wider text-white uppercase">Active Battery Conditioning</h3>
+            <h3 className="text-sm font-semibold tracking-wider text-white uppercase">{language === "en" ? "Active Battery Conditioning" : "Aktif Batarya Koşullandırma"}</h3>
             <p className="text-xs text-slate-400 font-light leading-relaxed">
               {language === "en"
                 ? "Using thermal management technologies, the charging control system heats or cools battery cells before charging, preserving battery longevity and peak cycles."
@@ -376,7 +378,7 @@ export function Charging() {
           </div>
 
           <div className="bg-white/[0.01] border border-white/5 rounded-3xl p-6 space-y-4 hover:border-white/10 transition duration-300">
-            <h3 className="text-sm font-semibold tracking-wider text-white uppercase">Green Grid Optimization</h3>
+            <h3 className="text-sm font-semibold tracking-wider text-white uppercase">{language === "en" ? "Green Grid Optimization" : "Yeşil Şebeke Optimizasyonu"}</h3>
             <p className="text-xs text-slate-400 font-light leading-relaxed">
               {language === "en"
                 ? "EVALIS aligns charging starts to match times when renewable energy production (solar/wind) is at its peak output on the grid, maximizing environmental benefits."

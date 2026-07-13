@@ -2,15 +2,19 @@ import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
 import { useLanguage } from "@/i18n/LanguageContext";
-import { readStorage, writeStorage, storageKeys, userStorageKeys } from "@/lib/storage";
+import { readStorage, writeStorage, removeStorage, storageKeys, userStorageKeys } from "@/lib/storage";
 import vehiclesData from "@/data/vehicles.json";
 import sessionsData from "@/data/sessions.json";
 import notificationsData from "@/data/notifications.json";
 import stationsData from "@/data/stations.json";
-import { Vehicle, ChargingSession, Notification, Station } from "@/types";
+import { Vehicle, ChargingSession, ChargingSchedule, Notification, Station } from "@/types";
 import { useToast } from "@/context/ToastContext";
 import { vehicleTelemetry, defaultVehicleTelemetry } from "@/data/vehicleTelemetry";
 import { VehicleTopView } from "@/components/dashboard/VehicleTopView";
+import { LiveChargingState, computeLiveProgress, HOME_STATION_ID } from "@/lib/chargingSession";
+import { getNextScheduledCharge, formatNextCharge } from "@/lib/scheduleRunner";
+
+const HOME_TICK_SECONDS = 4;
 
 function getTimeGreeting(hour: number, language: "en" | "tr") {
   if (hour >= 5 && hour < 12) return language === "en" ? "Good Morning" : "Günaydın";
@@ -27,16 +31,16 @@ export function DashboardOverview() {
 
   // Active Vehicle state synced with Sidebar switcher
   const [activeVehicleId, setActiveVehicleId] = useState(() => {
-    return readStorage<string>(userStorageKeys.activeVehicleId(user?.id || "guest"), "vector");
+    return readStorage<string>(userStorageKeys.activeVehicleId(user?.id || "guest"), "");
   });
   const [ownedIds, setOwnedIds] = useState<string[]>(() =>
-    readStorage<string[]>(userStorageKeys.ownedVehicles(user?.id || "guest"), user?.ownedVehicleIds || ["vector"])
+    readStorage<string[]>(userStorageKeys.ownedVehicles(user?.id || "guest"), user?.ownedVehicleIds || [])
   );
 
   useEffect(() => {
     const handleSync = () => {
-      setActiveVehicleId(readStorage<string>(userStorageKeys.activeVehicleId(user?.id || "guest"), "vector"));
-      setOwnedIds(readStorage<string[]>(userStorageKeys.ownedVehicles(user?.id || "guest"), user?.ownedVehicleIds || ["vector"]));
+      setActiveVehicleId(readStorage<string>(userStorageKeys.activeVehicleId(user?.id || "guest"), ""));
+      setOwnedIds(readStorage<string[]>(userStorageKeys.ownedVehicles(user?.id || "guest"), user?.ownedVehicleIds || []));
     };
     window.addEventListener("activeVehicleChanged", handleSync);
     window.addEventListener("storage", handleSync);
@@ -54,21 +58,56 @@ export function DashboardOverview() {
     vehicles.find((v) => v.id === ownedIds[0]) ||
     vehicles[0];
 
-  // Telemetry states bound to selected vehicle
-  const [batteryLevel, setBatteryLevel] = useState(78);
+  const allSchedules = readStorage<ChargingSchedule[]>(userStorageKeys.schedules(user?.id || "guest"), []);
+  const nextCharge = getNextScheduledCharge(allSchedules, activeVehicle.id);
+
+  // Charge limit / climate preference bound to the selected vehicle (edited on Settings)
   const [chargeLimit, setChargeLimit] = useState(85);
   const [climateOn, setClimateOn] = useState(false);
-  const [isCharging, setIsCharging] = useState(false);
+
+  // The one shared "is this vehicle charging" record — this page's Home
+  // charging button and the Charging Control page's station charging both
+  // read/write it, keyed per vehicle, so the two can never disagree about a
+  // vehicle's charging state or double-book it.
+  const [liveState, setLiveState] = useState<LiveChargingState | null>(() =>
+    readStorage<LiveChargingState | null>(userStorageKeys.liveCharging(user?.id || "guest", activeVehicle.id), null)
+  );
+  const isHomeActive = liveState?.mode === "home";
+  const isStationActive = liveState?.mode === "station";
+
+  const [batteryLevel, setBatteryLevel] = useState(() =>
+    liveState ? computeLiveProgress(liveState).percent : (activeVehicle.batteryPercent || 78)
+  );
 
   useEffect(() => {
     const settings = readStorage<any>(
       userStorageKeys.vehicleSettings(user?.id || "guest", activeVehicle.id),
       { batteryLevel: activeVehicle.batteryPercent || 78, chargeLimit: 85, climateOn: false }
     );
-    setBatteryLevel(settings.batteryLevel);
     setChargeLimit(settings.chargeLimit);
     setClimateOn(settings.climateOn);
-    setIsCharging(false); // Reset charging state on vehicle switch
+
+    const currentLiveState = readStorage<LiveChargingState | null>(
+      userStorageKeys.liveCharging(user?.id || "guest", activeVehicle.id),
+      null
+    );
+    setLiveState(currentLiveState);
+    setBatteryLevel(currentLiveState ? computeLiveProgress(currentLiveState).percent : settings.batteryLevel);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeVehicle.id, user?.id]);
+
+  useEffect(() => {
+    const handleSync = () => {
+      setLiveState(
+        readStorage<LiveChargingState | null>(userStorageKeys.liveCharging(user?.id || "guest", activeVehicle.id), null)
+      );
+    };
+    window.addEventListener("activeVehicleChanged", handleSync);
+    window.addEventListener("storage", handleSync);
+    return () => {
+      window.removeEventListener("activeVehicleChanged", handleSync);
+      window.removeEventListener("storage", handleSync);
+    };
   }, [activeVehicle.id, user?.id]);
 
   // Save changes to localStorage on change
@@ -100,63 +139,124 @@ export function DashboardOverview() {
     return () => clearInterval(interval);
   }, [language]);
 
-  // Simulated charging tick
-  useEffect(() => {
-    let interval: any;
-    if (isCharging) {
-      interval = setInterval(() => {
-        setBatteryLevel((prev) => {
-          if (prev >= chargeLimit) {
-            setIsCharging(false);
-            showToast(
-              language === "en"
-                ? "Charging completed to limit!"
-                : "Şarj limitleme sınırına ulaştı!",
-              "success"
-            );
-            
-            // Add a new completed session to history
-            const sessions = readStorage<ChargingSession[]>(storageKeys.sessions, sessionsData as ChargingSession[]);
-            const newSession: ChargingSession = {
-              id: `sess-${Date.now().toString().slice(-5)}`,
-              userId: user?.id || "guest",
-              vehicleId: activeVehicle.id,
-              stationId: "sta-01",
-              energyKWh: Math.round((chargeLimit - prev) * 0.9),
-              cost: Math.round((chargeLimit - prev) * 0.9 * 3.5),
-              status: "completed",
-              startedAt: new Date(Date.now() - 3600000).toISOString(),
-              endedAt: new Date().toISOString()
-            };
-            writeStorage(storageKeys.sessions, [newSession, ...sessions]);
-            window.dispatchEvent(new Event("evalis:sessionsUpdated"));
+  const finalizeHomeSession = (percent: number, reason: "completed" | "stopped") => {
+    if (!liveState || liveState.mode !== "home") return;
+    const sessions = readStorage<ChargingSession[]>(storageKeys.sessions, sessionsData as ChargingSession[]);
+    const energyKWh = Math.max(1, Math.round((percent - liveState.startPercent) * 0.9));
+    const nextSessions = sessions.map((s) =>
+      s.id === liveState.sessionId
+        ? { ...s, energyKWh, cost: Math.round(energyKWh * 3.5), status: "completed" as const, endedAt: new Date().toISOString() }
+        : s
+    );
+    writeStorage(storageKeys.sessions, nextSessions);
+    window.dispatchEvent(new Event("evalis:sessionsUpdated"));
 
-            // Add notification
-            const notifications = readStorage<Notification[]>(storageKeys.notifications, notificationsData as Notification[]);
-            const newNotif: Notification = {
-              id: `notif-${Date.now()}`,
-              userId: user?.id || "guest",
-              title: language === "en" ? "Charging Complete" : "Şarj Tamamlandı",
-              message: language === "en" 
-                ? `${activeVehicle.name} has finished charging to ${chargeLimit}%.` 
-                : `${activeVehicle.name} bataryası %${chargeLimit} seviyesine şarj edildi.`,
-              read: false,
-              createdAt: new Date().toISOString()
-            };
-            writeStorage(storageKeys.notifications, [newNotif, ...notifications]);
-            window.dispatchEvent(new Event("evalis:notificationsUpdated"));
-
-            saveTelemetry(chargeLimit, chargeLimit, climateOn);
-            return chargeLimit;
-          }
-          const next = prev + 1;
-          saveTelemetry(next, chargeLimit, climateOn);
-          return next;
-        });
-      }, 2500);
+    if (reason === "completed") {
+      const notifications = readStorage<Notification[]>(storageKeys.notifications, notificationsData as Notification[]);
+      const newNotif: Notification = {
+        id: `notif-${Date.now()}`,
+        userId: user?.id || "guest",
+        title: language === "en" ? "Charging Complete" : "Şarj Tamamlandı",
+        message: language === "en"
+          ? `${activeVehicle.name} has finished home charging to ${percent}%.`
+          : `${activeVehicle.name} evde şarj edilerek %${percent} seviyesine ulaştı.`,
+        read: false,
+        createdAt: new Date().toISOString()
+      };
+      writeStorage(storageKeys.notifications, [newNotif, ...notifications]);
+      window.dispatchEvent(new Event("evalis:notificationsUpdated"));
     }
+
+    removeStorage(userStorageKeys.liveCharging(user?.id || "guest", activeVehicle.id));
+    saveTelemetry(percent, chargeLimit, climateOn);
+    setLiveState(null);
+    window.dispatchEvent(new Event("activeVehicleChanged"));
+  };
+
+  // Live ticking while a session is active for this vehicle — Home sessions are
+  // owned (started/stopped/finalized) here; Station sessions are only ever
+  // reflected read-only, since the Charging Control page owns finalizing those.
+  useEffect(() => {
+    if (!liveState) return;
+    const interval = setInterval(() => {
+      const { percent, done } = computeLiveProgress(liveState);
+      setBatteryLevel(percent);
+      if (liveState.mode === "home") {
+        saveTelemetry(percent, chargeLimit, climateOn);
+        if (done) {
+          finalizeHomeSession(percent, "completed");
+          showToast(
+            language === "en" ? "Charging completed to limit!" : "Şarj limitleme sınırına ulaştı!",
+            "success"
+          );
+        }
+      }
+    }, 1000);
     return () => clearInterval(interval);
-  }, [isCharging, chargeLimit, language, activeVehicle.name, activeVehicle.id, user?.id, showToast, climateOn]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [liveState]);
+
+  // If a Home session finished its target while the user was away, finalize it now
+  useEffect(() => {
+    if (liveState?.mode === "home") {
+      const { percent, done } = computeLiveProgress(liveState);
+      if (done) {
+        setBatteryLevel(percent);
+        finalizeHomeSession(percent, "completed");
+        showToast(
+          language === "en" ? "Charging completed while you were away" : "Siz uzaktayken şarj tamamlandı",
+          "success"
+        );
+      }
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [liveState?.sessionId]);
+
+  const handleStartHomeCharging = () => {
+    if (!user) return;
+    if (batteryLevel >= chargeLimit) {
+      showToast(
+        language === "en"
+          ? "Battery is already at or above your charge limit"
+          : "Batarya zaten hedef şarj sınırında veya üzerinde",
+        "info"
+      );
+      return;
+    }
+    const sessions = readStorage<ChargingSession[]>(storageKeys.sessions, sessionsData as ChargingSession[]);
+    const newSession: ChargingSession = {
+      id: `sess-${Date.now().toString().slice(-5)}`,
+      userId: user.id,
+      vehicleId: activeVehicle.id,
+      stationId: HOME_STATION_ID,
+      energyKWh: 0,
+      cost: 0,
+      status: "charging",
+      startedAt: new Date().toISOString()
+    };
+    writeStorage(storageKeys.sessions, [newSession, ...sessions]);
+    window.dispatchEvent(new Event("evalis:sessionsUpdated"));
+
+    const nextLiveState: LiveChargingState = {
+      sessionId: newSession.id,
+      vehicleId: activeVehicle.id,
+      mode: "home",
+      stationId: HOME_STATION_ID,
+      startPercent: batteryLevel,
+      targetPercent: chargeLimit,
+      startedAt: new Date().toISOString(),
+      tickSeconds: HOME_TICK_SECONDS
+    };
+    writeStorage(userStorageKeys.liveCharging(user.id, activeVehicle.id), nextLiveState);
+    setLiveState(nextLiveState);
+    window.dispatchEvent(new Event("activeVehicleChanged"));
+    showToast(language === "en" ? "Home charging started" : "Ev şarjı başlatıldı", "success");
+  };
+
+  const handleStopHomeCharging = () => {
+    finalizeHomeSession(batteryLevel, "stopped");
+    showToast(language === "en" ? "Home charging stopped" : "Ev şarjı durduruldu", "info");
+  };
 
   // Load notifications, favorites, and schedules
   const sessions = readStorage<ChargingSession[]>(storageKeys.sessions, sessionsData as ChargingSession[]);
@@ -240,6 +340,47 @@ export function DashboardOverview() {
 
   const telemetry = vehicleTelemetry[activeVehicle.id] || defaultVehicleTelemetry;
 
+  // A brand-new account owns nothing yet — show an empty state instead of
+  // fabricated telemetry for a vehicle they never registered.
+  if (ownedIds.length === 0) {
+    return (
+      <div className="space-y-8 animate-fade-in text-slate-100">
+        <div className="dash-panel p-6">
+          <span className="text-[9px] uppercase tracking-[0.3em] text-accent font-bold block">
+            {language === "en" ? "EVALIS SYSTEM COCKPIT" : "EVALIS SİSTEM KOKPİTİ"}
+          </span>
+          <h1 className="text-xl font-light uppercase tracking-widest text-slate-100 mt-1">
+            {getTimeGreeting(new Date().getHours(), language)}, {user?.name || ""}
+          </h1>
+        </div>
+
+        <div className="dash-panel p-12 flex flex-col items-center text-center gap-5">
+          <div className="w-16 h-16 rounded-full bg-accent/10 border border-accent/20 flex items-center justify-center">
+            <svg className="w-8 h-8 text-accent" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M12 18h.01M8 21h8a2 2 0 002-2V9a2 2 0 00-2-2H8a2 2 0 00-2 2v10a2 2 0 002 2z" />
+            </svg>
+          </div>
+          <div className="space-y-2 max-w-sm">
+            <h2 className="text-lg font-light uppercase tracking-widest text-slate-100">
+              {language === "en" ? "No Vehicles Yet" : "Henüz Aracınız Yok"}
+            </h2>
+            <p className="text-xs text-slate-500 font-light leading-relaxed">
+              {language === "en"
+                ? "Register your first EVALIS vehicle to unlock charging control, telemetry, and your personal cockpit."
+                : "Şarj kontrolü, telemetri ve kişisel kokpitinizin kilidini açmak için ilk EVALIS aracınızı kaydedin."}
+            </p>
+          </div>
+          <Link
+            to="/dashboard/vehicles"
+            className="rounded-full bg-accent text-black px-6 py-3 text-xs font-bold uppercase tracking-widest hover:bg-[#348c70] transition duration-300"
+          >
+            {language === "en" ? "Add a Vehicle" : "Araç Ekle"}
+          </Link>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-8 animate-fade-in text-slate-100">
       
@@ -258,7 +399,7 @@ export function DashboardOverview() {
         <div className="flex flex-wrap items-center gap-4 text-xs font-light">
           {/* Find Charging Station */}
           <Link
-            to="/dashboard/stations"
+            to="/dashboard/charging"
             className="dash-pill px-5 py-2.5 hover:text-white text-[10px] font-bold uppercase tracking-wider transition border border-accent/20 text-accent hover:bg-accent/5 flex items-center gap-2"
           >
             <span>🔍</span>
@@ -269,7 +410,7 @@ export function DashboardOverview() {
           <div className="dash-inset px-4 py-2 rounded-xl flex items-center gap-3">
             <span className="text-lg" aria-hidden="true">☀️</span>
             <div>
-              <p className="font-semibold text-slate-200">Istanbul · 24°C</p>
+              <p className="font-semibold text-slate-200">{language === "en" ? "Istanbul" : "İstanbul"} · 24°C</p>
               <p className="text-[9px] text-slate-500 font-mono mt-0.5">
                 {language === "en" ? "Sunny" : "Güneşli"}
               </p>
@@ -305,7 +446,7 @@ export function DashboardOverview() {
               </span>
               
               <div className="w-full h-44 rounded-2xl overflow-hidden bg-black/20 border border-white/5 flex items-center justify-center p-3">
-                <VehicleTopView vehicleId={activeVehicle.id} isCharging={isCharging} className="h-full" />
+                <VehicleTopView vehicleId={activeVehicle.id} isCharging={!!liveState} className="h-full" />
               </div>
 
               <div className="space-y-0.5 text-xs text-slate-400">
@@ -321,27 +462,61 @@ export function DashboardOverview() {
                 {language === "en" ? "CHARGE TELEMETRY" : "ŞARJ TELEMETRİSİ"}
               </span>
 
-              {/* Şarj Et Button */}
-              <button
-                onClick={() => setIsCharging(!isCharging)}
-                className={`w-full py-4 rounded-full border text-sm font-bold uppercase tracking-wider transition cursor-pointer flex items-center justify-center gap-2 ${
-                  isCharging
-                    ? "bg-accent/20 border-accent text-accent animate-pulse"
-                    : "bg-white text-black border-transparent hover:bg-slate-200"
-                }`}
-              >
-                <span className="text-lg" aria-hidden="true">⚡</span>
-                {isCharging ? (language === "en" ? "Charging" : "Şarj Oluyor") : (language === "en" ? "Start Charging" : "Şarj Et")}
-              </button>
+              {/* Home / Station charging actions */}
+              {isStationActive ? (
+                <div className="w-full py-4 rounded-full border border-accent bg-accent/10 text-accent text-xs font-bold uppercase tracking-wider flex items-center justify-center gap-2 animate-pulse">
+                  <svg className="w-4 h-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                  </svg>
+                  {language === "en" ? "Charging at" : "Şarj ediliyor:"}{" "}
+                  {stations.find((s) => s.id === liveState?.stationId)?.name || (language === "en" ? "Station" : "İstasyon")}
+                </div>
+              ) : (
+                <div className="grid grid-cols-2 gap-3">
+                  <button
+                    onClick={isHomeActive ? handleStopHomeCharging : handleStartHomeCharging}
+                    className={`py-4 rounded-full border text-sm font-bold uppercase tracking-wider transition cursor-pointer flex items-center justify-center gap-2 ${
+                      isHomeActive
+                        ? "bg-accent/20 border-accent text-accent animate-pulse"
+                        : "bg-white text-black border-transparent hover:bg-slate-200"
+                    }`}
+                  >
+                    <svg className="w-4 h-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
+                    </svg>
+                    {isHomeActive
+                      ? (language === "en" ? "Charging" : "Şarj Oluyor")
+                      : (language === "en" ? "Charge at Home" : "Evde Şarj Et")}
+                  </button>
+                  <Link
+                    to="/dashboard/charging"
+                    className="py-4 rounded-full border border-white/10 text-slate-300 text-sm font-bold uppercase tracking-wider transition hover:border-accent/40 hover:text-white flex items-center justify-center gap-2"
+                  >
+                    <svg className="w-4 h-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                    </svg>
+                    {language === "en" ? "Charge at Station" : "İstasyonda Şarj Et"}
+                  </Link>
+                </div>
+              )}
+              {isStationActive && (
+                <Link
+                  to="/dashboard/charging"
+                  className="block text-center text-[10px] text-slate-500 hover:text-accent uppercase tracking-widest font-semibold transition"
+                >
+                  {language === "en" ? "Manage on Charging Control" : "Şarj Kontrolü'nden Yönet"}
+                </Link>
+              )}
 
               {/* Progress info labels */}
               <div className="grid grid-cols-2 gap-4 text-xs font-mono">
                 <div>
-                  <span className="text-[8px] text-slate-500 uppercase tracking-widest block font-bold">Batarya %</span>
+                  <span className="text-[8px] text-slate-500 uppercase tracking-widest block font-bold">{language === "en" ? "Battery %" : "Batarya %"}</span>
                   <span className="text-xl font-bold text-slate-200 mt-0.5 block">{batteryLevel}%</span>
                 </div>
                 <div>
-                  <span className="text-[8px] text-slate-500 uppercase tracking-widest block font-bold">Menzil km</span>
+                  <span className="text-[8px] text-slate-500 uppercase tracking-widest block font-bold">{language === "en" ? "Range km" : "Menzil km"}</span>
                   <span className="text-xl font-bold text-slate-200 mt-0.5 block">
                     {Math.round(batteryLevel * telemetry.rangeFactor)} km
                   </span>
@@ -362,6 +537,12 @@ export function DashboardOverview() {
                   <span>100%</span>
                 </div>
               </div>
+
+              {!liveState && nextCharge && (
+                <p className="text-[9px] text-slate-500 font-mono">
+                  {language === "en" ? "Next scheduled charge" : "Sonraki planlı şarj"}: {formatNextCharge(nextCharge, language)}
+                </p>
+              )}
             </div>
           </div>
 
@@ -628,7 +809,7 @@ export function DashboardOverview() {
                       </div>
                       <div className="min-w-0">
                         <Link
-                          to="/dashboard/stations"
+                          to="/dashboard/charging"
                           className="font-semibold text-slate-200 uppercase tracking-wider truncate block hover:text-accent"
                         >
                           {station.name.replace("EVALIS ", "")}
@@ -644,12 +825,12 @@ export function DashboardOverview() {
                       <button
                         onClick={() => handleToggleFavorite(station.id)}
                         className={`text-sm cursor-pointer transition ${isFavorite ? "text-amber-400 hover:text-slate-400" : "text-slate-500 hover:text-amber-400"}`}
-                        title={isFavorite ? "Remove Favorite" : "Add Favorite"}
-                        aria-label={isFavorite ? "Remove Favorite" : "Add Favorite"}
+                        title={isFavorite ? (language === "en" ? "Remove Favorite" : "Favoriden Çıkar") : (language === "en" ? "Add Favorite" : "Favoriye Ekle")}
+                        aria-label={isFavorite ? (language === "en" ? "Remove Favorite" : "Favoriden Çıkar") : (language === "en" ? "Add Favorite" : "Favoriye Ekle")}
                       >
                         {isFavorite ? "★" : "☆"}
                       </button>
-                      <Link to="/dashboard/stations" className="text-slate-500 hover:text-white transition">
+                      <Link to="/dashboard/charging" className="text-slate-500 hover:text-white transition">
                         →
                       </Link>
                     </div>
@@ -660,7 +841,7 @@ export function DashboardOverview() {
 
             <div className="flex justify-end pt-1">
               <Link
-                to="/dashboard/stations"
+                to="/dashboard/charging"
                 className="text-[9px] uppercase tracking-widest text-slate-500 hover:text-accent font-bold transition"
               >
                 {language === "en" ? "see more" : "daha fazla gör"}

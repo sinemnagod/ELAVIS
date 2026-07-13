@@ -6,6 +6,8 @@ import { useAuth } from "@/context/AuthContext";
 import { useToast } from "@/context/ToastContext";
 import vehiclesData from "@/data/vehicles.json";
 import productsData from "@/data/products.json";
+import { productName } from "@/data/productTranslations";
+import { vehicleType } from "@/data/vehicleTranslations";
 
 function LogoText({ className = "" }: { className?: string }) {
   return (
@@ -99,7 +101,7 @@ export function PublicLayout() {
           : "EVALIS elektrikli platformu etrafında tasarlanan sedan, SUV ve motosiklet seçenekleri.",
       cards: vehicles.map((vehicle) => ({
         title: vehicle.name,
-        meta: vehicle.type,
+        meta: vehicleType(vehicle.id, vehicle.type, language),
         image: vehicle.image,
         to: `/vehicles/${vehicle.id}`
       }))
@@ -146,7 +148,7 @@ export function PublicLayout() {
           ? "Browse charging gear, access items, and parts designed for the EVALIS ecosystem."
           : "EVALIS ekosistemi için tasarlanan şarj ekipmanlarını, erişim ürünlerini ve parçaları inceleyin.",
       cards: products.map((product) => ({
-        title: product.name,
+        title: productName(product.id, product.name, language),
         meta: formatPrice(product.priceUSD, product.priceTRY),
         image: product.image,
         to: "/shop"
@@ -199,7 +201,7 @@ export function PublicLayout() {
         language === "en" ? "Please log in to proceed to checkout" : "Ödemeye geçmek için lütfen giriş yapın",
         "info"
       );
-      navigate("/login");
+      navigate("/login", { state: { from: "/checkout" } });
     } else {
       navigate("/checkout");
     }
@@ -509,7 +511,7 @@ export function PublicLayout() {
                         <img src={item.product.image} alt={item.product.name} className="max-h-full max-w-full object-contain" />
                       </div>
                       <div className="flex-grow space-y-1">
-                        <h4 className="text-xs font-light uppercase tracking-wider text-slate-200">{item.product.name}</h4>
+                        <h4 className="text-xs font-light uppercase tracking-wider text-slate-200">{productName(item.product.id, item.product.name, language)}</h4>
                         <p className="text-xs text-accent font-semibold">
                           {formatPrice(item.product.priceUSD, item.product.priceTRY)}
                         </p>
@@ -544,7 +546,7 @@ export function PublicLayout() {
             {cart.length > 0 && (
               <div className="border-t border-white/10 pt-6 space-y-4">
                 <div className="flex justify-between items-center text-xs">
-                  <span className="text-slate-400 uppercase tracking-widest">Subtotal</span>
+                  <span className="text-slate-400 uppercase tracking-widest">{language === "en" ? "Subtotal" : "Ara Toplam"}</span>
                   <span className="text-md font-semibold text-accent">
                     {formatPrice(subtotalUSD, subtotalTRY)}
                   </span>
@@ -613,7 +615,7 @@ export function PublicLayout() {
               <ul className="space-y-2 text-xs text-slate-400 font-light">
                 <li><Link to="/vehicles/vector" className="hover:text-white transition">Vector (Sedan)</Link></li>
                 <li><Link to="/vehicles/cloud" className="hover:text-white transition">Cloud (SUV)</Link></li>
-                <li><Link to="/vehicles/bullet" className="hover:text-white transition">Bullet (Motorcycle)</Link></li>
+                <li><Link to="/vehicles/bullet" className="hover:text-white transition">Bullet ({language === "en" ? "Motorcycle" : "Motosiklet"})</Link></li>
                 <li><Link to="/vehicles" className="hover:text-white transition">{language === "en" ? "All Models" : "Tüm Modeller"}</Link></li>
               </ul>
             </div>
@@ -624,9 +626,9 @@ export function PublicLayout() {
                 {language === "en" ? "Energy & Tech" : "Enerji ve Teknoloji"}
               </span>
               <ul className="space-y-2 text-xs text-slate-400 font-light">
-                <li><Link to="/charging" className="hover:text-white transition">Home Charger</Link></li>
-                <li><Link to="/charging" className="hover:text-white transition">Superchargers</Link></li>
-                <li><Link to="/charging" className="hover:text-white transition">Solar Panel Grid</Link></li>
+                <li><Link to="/charging" className="hover:text-white transition">{language === "en" ? "Home Charger" : "Ev Şarj Cihazı"}</Link></li>
+                <li><Link to="/charging" className="hover:text-white transition">{language === "en" ? "Superchargers" : "Süper Şarj İstasyonları"}</Link></li>
+                <li><Link to="/charging" className="hover:text-white transition">{language === "en" ? "Solar Panel Grid" : "Güneş Paneli Şebekesi"}</Link></li>
                 <li><Link to="/about" className="hover:text-white transition">{language === "en" ? "Autopilot ADAS" : "Otonom ADAS"}</Link></li>
               </ul>
             </div>
@@ -648,13 +650,15 @@ export function PublicLayout() {
           {/* Divider */}
           <div className="border-t border-white/5 pt-4 flex flex-col md:flex-row justify-between items-center gap-4 text-[11px] text-slate-500 tracking-wider">
             <div className="flex flex-wrap justify-center gap-6">
-              <a href="#" onClick={handleUnavailableLink} className="hover:text-slate-350 transition">Privacy Policy</a>
-              <a href="#" onClick={handleUnavailableLink} className="hover:text-slate-350 transition">Terms of Service</a>
-              <a href="#" onClick={handleUnavailableLink} className="hover:text-slate-350 transition">Cookie Settings</a>
-              <a href="#" onClick={handleUnavailableLink} className="hover:text-slate-350 transition">Contact Us</a>
+              <a href="#" onClick={handleUnavailableLink} className="hover:text-slate-350 transition">{language === "en" ? "Privacy Policy" : "Gizlilik Politikası"}</a>
+              <a href="#" onClick={handleUnavailableLink} className="hover:text-slate-350 transition">{language === "en" ? "Terms of Service" : "Kullanım Koşulları"}</a>
+              <a href="#" onClick={handleUnavailableLink} className="hover:text-slate-350 transition">{language === "en" ? "Cookie Settings" : "Çerez Ayarları"}</a>
+              <a href="#" onClick={handleUnavailableLink} className="hover:text-slate-350 transition">{language === "en" ? "Contact Us" : "Bize Ulaşın"}</a>
             </div>
             <div>
-              © 2026 EVALIS Inc. Istanbul, Turkey. All rights reserved.
+              {language === "en"
+                ? "© 2026 EVALIS Inc. Istanbul, Turkey. All rights reserved."
+                : "© 2026 EVALIS Inc. İstanbul, Türkiye. Tüm hakları saklıdır."}
             </div>
           </div>
         </div>

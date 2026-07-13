@@ -25,8 +25,9 @@ export function EnergyDashboard() {
     const daySessions = userSessions.filter(
       (s) => new Date(s.startedAt).toDateString() === date.toDateString()
     );
-    const kwh = daySessions.reduce((acc, s) => acc + s.energyKWh, 0);
-    const costUSD = daySessions.reduce((acc, s) => acc + s.cost, 0);
+    // Clamp defensively — a stray session record should never drag the totals negative
+    const kwh = daySessions.reduce((acc, s) => acc + Math.max(0, s.energyKWh), 0);
+    const costUSD = daySessions.reduce((acc, s) => acc + Math.max(0, s.cost), 0);
     return {
       day: date.toLocaleDateString(locale, { weekday: "short" }),
       kwh: Math.round(kwh * 10) / 10,
@@ -81,7 +82,7 @@ export function EnergyDashboard() {
             {formatPrice(totalCostUSD, totalCostUSD * 34)}
           </span>
           <span className="text-[8px] text-slate-500 tracking-wider uppercase mt-2 block font-mono">
-            Avg. {formatPrice(0.35, 12)} / kWh
+            {language === "en" ? "Avg." : "Ort."} {formatPrice(0.35, 12)} / kWh
           </span>
         </div>
 
@@ -117,9 +118,12 @@ export function EnergyDashboard() {
             <div className="relative h-56 w-full flex items-end justify-between px-2 pb-2">
               {dailyConsumption.map((item, i) => {
                 const maxKwh = Math.max(...dailyConsumption.map((d) => d.kwh));
-                const heightPercent = maxKwh > 0 ? (item.kwh / maxKwh) * 85 : 0;
+                // Pixel height, not a CSS percentage — the column wrapper below has no
+                // explicit height of its own, so a percentage height on the bar would
+                // resolve against an undefined containing block and silently collapse to 0.
+                const heightPx = maxKwh > 0 ? Math.max(4, (item.kwh / maxKwh) * 160) : 0;
                 return (
-                  <div key={i} className="flex flex-col items-center gap-2 w-[12%] group relative">
+                  <div key={i} className="flex flex-col items-center justify-end gap-2 h-full w-[12%] group relative">
                     {/* Tooltip */}
                     <div className="absolute bottom-full mb-2 bg-[#0a0f18] border border-white/10 rounded-lg p-2 text-[9px] font-mono text-slate-200 opacity-0 group-hover:opacity-100 pointer-events-none transition duration-200 z-10 text-center whitespace-nowrap shadow-xl">
                       <p className="font-semibold text-accent">{item.kwh} kWh</p>
@@ -127,10 +131,10 @@ export function EnergyDashboard() {
                     </div>
                     {/* Bar */}
                     <div
-                      style={{ height: `${heightPercent}%` }}
+                      style={{ height: `${heightPx}px` }}
                       className={`w-full rounded-t-lg transition-all duration-700 ${
-                        item.kwh > 0 
-                          ? "bg-accent/20 border border-accent/35 group-hover:bg-accent/30" 
+                        item.kwh > 0
+                          ? "bg-accent/20 border border-accent/35 group-hover:bg-accent/30"
                           : "bg-white/5 border border-white/10"
                       }`}
                     />

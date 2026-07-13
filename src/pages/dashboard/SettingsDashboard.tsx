@@ -1,26 +1,27 @@
 import { useState, useEffect } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { useLanguage } from "@/i18n/LanguageContext";
-import { readStorage, writeStorage, userStorageKeys } from "@/lib/storage";
+import { readStorage, writeStorage, storageKeys, userStorageKeys } from "@/lib/storage";
+import { formatPhoneInput } from "@/lib/phone";
 import { useToast } from "@/context/ToastContext";
 import vehiclesData from "@/data/vehicles.json";
-import { Vehicle } from "@/types";
+import { User, Vehicle } from "@/types";
 
 export function SettingsDashboard() {
-  const { session } = useAuth();
+  const { session, refreshSession } = useAuth();
   const { language, changeLanguage } = useLanguage();
   const { showToast } = useToast();
 
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
-  const [preconditionTime, setPreconditionTime] = useState("07:30");
   const [maxChargeLimit, setMaxChargeLimit] = useState(85);
 
   const userId = session?.user?.id || "guest";
+  const ownedVehicleIds = session?.user?.ownedVehicleIds || [];
   const activeVehicleId = readStorage<string>(
     userStorageKeys.activeVehicleId(userId),
-    session?.user?.ownedVehicleIds?.[0] || "vector"
+    ownedVehicleIds[0] || ""
   );
   const activeVehicleName =
     (vehiclesData as Vehicle[]).find((v) => v.id === activeVehicleId)?.name || activeVehicleId;
@@ -29,8 +30,7 @@ export function SettingsDashboard() {
     if (session) {
       setName(session.user.name);
       setEmail(session.user.email);
-      setPhone(readStorage(userStorageKeys.phone(session.user.id), "+90 555 123 45 67"));
-      setPreconditionTime(readStorage(userStorageKeys.precondition(session.user.id), "07:30"));
+      setPhone(session.user.phone);
       const vehicleSettings = readStorage<any>(
         userStorageKeys.vehicleSettings(session.user.id, activeVehicleId),
         { chargeLimit: 85 }
@@ -41,19 +41,22 @@ export function SettingsDashboard() {
 
   const handleSaveProfile = (e: React.FormEvent) => {
     e.preventDefault();
-    if (session) {
-      writeStorage(userStorageKeys.phone(session.user.id), phone);
-      showToast(
-        language === "en" ? "Profile settings saved successfully" : "Profil ayarları başarıyla kaydedildi",
-        "success"
-      );
-    }
+    if (!session) return;
+    const allUsers = readStorage<User[]>(storageKeys.users, []);
+    writeStorage(
+      storageKeys.users,
+      allUsers.map((u) => (u.id === session.user.id ? { ...u, name, phone } : u))
+    );
+    refreshSession();
+    showToast(
+      language === "en" ? "Profile settings saved successfully" : "Profil ayarları başarıyla kaydedildi",
+      "success"
+    );
   };
 
   const handleSaveCharging = (e: React.FormEvent) => {
     e.preventDefault();
     if (session) {
-      writeStorage(userStorageKeys.precondition(session.user.id), preconditionTime);
       const existing = readStorage<any>(
         userStorageKeys.vehicleSettings(session.user.id, activeVehicleId),
         {}
@@ -100,11 +103,12 @@ export function SettingsDashboard() {
               <input
                 type="text"
                 value={name}
-                disabled
-                className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-xs text-slate-400 outline-none cursor-not-allowed font-mono"
+                onChange={(e) => setName(e.target.value)}
+                className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-xs text-slate-200 outline-none focus:border-accent/40 transition font-mono"
+                required
               />
             </div>
-            
+
             <div className="space-y-1">
               <label className="text-[9px] text-slate-500 uppercase tracking-widest block font-bold">
                 {language === "en" ? "Email Address" : "E-posta Adresi"}
@@ -122,9 +126,10 @@ export function SettingsDashboard() {
                 {language === "en" ? "Phone Number" : "Telefon Numarası"}
               </label>
               <input
-                type="text"
+                type="tel"
+                inputMode="tel"
                 value={phone}
-                onChange={(e) => setPhone(e.target.value)}
+                onChange={(e) => setPhone(formatPhoneInput(e.target.value))}
                 className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-xs text-slate-200 outline-none focus:border-accent/40 transition font-mono"
                 required
               />
@@ -141,53 +146,45 @@ export function SettingsDashboard() {
 
         {/* System Config Card */}
         <div className="space-y-8">
-          
-          {/* Vehicle default limit and preconditions settings */}
-          <div className="dash-panel p-6 space-y-6">
-            <h3 className="text-xs uppercase tracking-widest text-slate-455 font-bold border-b border-white/5 pb-2">
-              {language === "en" ? "Charging Defaults" : "Şarj Varsayılanları"}
-            </h3>
 
-            <form onSubmit={handleSaveCharging} className="space-y-4">
-              <div className="space-y-2">
-                <div className="flex justify-between text-[9px] text-slate-500 uppercase tracking-widest font-bold font-mono">
-                  <span>
-                    {language === "en" ? "Charge Target Limit" : "Hedef Şarj Limiti"}
-                    <span className="text-slate-600 normal-case tracking-normal"> · {activeVehicleName}</span>
-                  </span>
-                  <span className="text-accent font-semibold">{maxChargeLimit}%</span>
+          {/* Vehicle default charge limit — set per-schedule preconditioning from Schedules instead */}
+          {ownedVehicleIds.length > 0 && (
+            <div className="dash-panel p-6 space-y-6">
+              <h3 className="text-xs uppercase tracking-widest text-slate-455 font-bold border-b border-white/5 pb-2">
+                {language === "en" ? "Charging Defaults" : "Şarj Varsayılanları"}
+              </h3>
+
+              <form onSubmit={handleSaveCharging} className="space-y-4">
+                <div className="space-y-2">
+                  <div className="flex justify-between text-[9px] text-slate-500 uppercase tracking-widest font-bold font-mono">
+                    <span>
+                      {language === "en" ? "Charge Target Limit" : "Hedef Şarj Limiti"}
+                      {activeVehicleName && (
+                        <span className="text-slate-600 normal-case tracking-normal"> · {activeVehicleName}</span>
+                      )}
+                    </span>
+                    <span className="text-accent font-semibold">{maxChargeLimit}%</span>
+                  </div>
+                  <input
+                    type="range"
+                    min="50"
+                    max="100"
+                    step="5"
+                    value={maxChargeLimit}
+                    onChange={(e) => setMaxChargeLimit(Number(e.target.value))}
+                    className="w-full h-1 bg-white/10 rounded-lg appearance-none cursor-pointer accent-accent"
+                  />
                 </div>
-                <input
-                  type="range"
-                  min="50"
-                  max="100"
-                  step="5"
-                  value={maxChargeLimit}
-                  onChange={(e) => setMaxChargeLimit(Number(e.target.value))}
-                  className="w-full h-1 bg-white/10 rounded-lg appearance-none cursor-pointer accent-accent"
-                />
-              </div>
 
-              <div className="space-y-1">
-                <label className="text-[9px] text-slate-500 uppercase tracking-widest block font-bold">
-                  {language === "en" ? "Daily Precondition Time" : "Günlük Kabin Hazırlığı"}
-                </label>
-                <input
-                  type="time"
-                  value={preconditionTime}
-                  onChange={(e) => setPreconditionTime(e.target.value)}
-                  className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-xs text-slate-200 outline-none focus:border-accent/40 transition font-mono"
-                />
-              </div>
-
-              <button
-                type="submit"
-                className="py-2.5 px-6 rounded-full bg-accent text-black text-xs font-bold uppercase tracking-widest hover:bg-[#348c70] transition cursor-pointer"
-              >
-                {language === "en" ? "Update Configuration" : "Yapılandırmayı Güncelle"}
-              </button>
-            </form>
-          </div>
+                <button
+                  type="submit"
+                  className="py-2.5 px-6 rounded-full bg-accent text-black text-xs font-bold uppercase tracking-widest hover:bg-[#348c70] transition cursor-pointer"
+                >
+                  {language === "en" ? "Update Configuration" : "Yapılandırmayı Güncelle"}
+                </button>
+              </form>
+            </div>
+          )}
 
           {/* Regional Settings */}
           <div className="dash-card p-6 space-y-4">

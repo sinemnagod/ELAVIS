@@ -23,16 +23,28 @@ export function VehicleDetails() {
   const [isPreconditioning, setIsPreconditioning] = useState(false);
   const [chargeLimit, setChargeLimit] = useState(80);
 
+  const ownedIds = readStorage<string[]>(
+    userStorageKeys.ownedVehicles(userId),
+    session?.user?.ownedVehicleIds || []
+  );
+  const isOwned = !!vehicle && ownedIds.includes(vehicle.id);
+
   useEffect(() => {
-    if (!vehicle) {
+    if (!vehicle || !isOwned) {
+      if (vehicle && !isOwned) {
+        showToast(
+          language === "en" ? "You don't own that vehicle" : "Bu araca sahip değilsiniz",
+          "error"
+        );
+      }
       navigate("/dashboard/vehicles");
       return;
     }
     const settings = readStorage<any>(userStorageKeys.vehicleSettings(userId, vehicle.id), { chargeLimit: 80 });
     setChargeLimit(settings.chargeLimit ?? 80);
-  }, [vehicle, navigate, userId]);
+  }, [vehicle, isOwned, navigate, userId, language, showToast]);
 
-  if (!vehicle) return null;
+  if (!vehicle || !isOwned) return null;
 
   const telemetry = vehicleTelemetry[vehicle.id] || defaultVehicleTelemetry;
 
@@ -119,13 +131,13 @@ export function VehicleDetails() {
 
             <div className="flex justify-between items-start z-10">
               <div>
-                <span className="text-[9px] uppercase tracking-widest text-accent font-bold font-mono block">Status: Online</span>
+                <span className="text-[9px] uppercase tracking-widest text-accent font-bold font-mono block">{language === "en" ? "Status: Online" : "Durum: Çevrimiçi"}</span>
                 <span className="text-3xl font-light tracking-wide text-white mt-1 block">
-                  {vehicle.batteryPercent || 78}% Charged
+                  {vehicle.batteryPercent || 78}% {language === "en" ? "Charged" : "Şarjlı"}
                 </span>
               </div>
               <div className="text-right">
-                <span className="text-[9px] text-slate-500 uppercase tracking-widest block font-bold">Signal</span>
+                <span className="text-[9px] text-slate-500 uppercase tracking-widest block font-bold">{language === "en" ? "Signal" : "Sinyal"}</span>
                 <span className="text-xs font-semibold text-accent font-mono block">LTE 5/5</span>
               </div>
             </div>
@@ -141,17 +153,17 @@ export function VehicleDetails() {
 
             <div className="grid grid-cols-3 gap-4 border-t border-white/5 pt-4 text-center z-10">
               <div>
-                <span className="text-[9px] text-slate-500 uppercase tracking-widest block font-bold">Odometer</span>
+                <span className="text-[9px] text-slate-500 uppercase tracking-widest block font-bold">{language === "en" ? "Odometer" : "Kilometre"}</span>
                 <span className="text-sm font-semibold text-slate-200 mt-0.5 block font-mono">{telemetry.odometer.toLocaleString()} km</span>
               </div>
               <div>
-                <span className="text-[9px] text-slate-500 uppercase tracking-widest block font-bold">Est. Range</span>
+                <span className="text-[9px] text-slate-500 uppercase tracking-widest block font-bold">{language === "en" ? "Est. Range" : "Tahmini Menzil"}</span>
                 <span className="text-sm font-semibold text-slate-200 mt-0.5 block font-mono">
                   {Math.round((vehicle.batteryPercent || 78) * telemetry.rangeFactor)} km
                 </span>
               </div>
               <div>
-                <span className="text-[9px] text-slate-500 uppercase tracking-widest block font-bold">Cabin Temp</span>
+                <span className="text-[9px] text-slate-500 uppercase tracking-widest block font-bold">{language === "en" ? "Cabin Temp" : "Kabin Sıcaklığı"}</span>
                 <span className="text-sm font-semibold text-slate-200 mt-0.5 block font-mono">
                   {isPreconditioning ? "21°C" : "28°C"}
                 </span>

@@ -1,4 +1,4 @@
-import { createBrowserRouter } from "react-router-dom";
+import { createBrowserRouter, Navigate } from "react-router-dom";
 import { AdminLayout } from "@/layouts/AdminLayout";
 import { DashboardLayout } from "@/layouts/DashboardLayout";
 import { PublicLayout } from "@/layouts/PublicLayout";
@@ -20,7 +20,6 @@ import { AboutFaq } from "@/pages/public/AboutFaq";
 
 // Dashboard Pages
 import { DashboardOverview } from "@/pages/dashboard/DashboardOverview";
-import { Stations } from "@/pages/dashboard/Stations";
 import { VehiclesList } from "@/pages/dashboard/VehiclesList";
 import { VehicleDetails } from "@/pages/dashboard/VehicleDetails";
 import { ChargingDashboard } from "@/pages/dashboard/ChargingDashboard";
@@ -30,6 +29,7 @@ import { EnergyDashboard } from "@/pages/dashboard/EnergyDashboard";
 import { NotificationsDashboard } from "@/pages/dashboard/NotificationsDashboard";
 import { RewardsDashboard } from "@/pages/dashboard/RewardsDashboard";
 import { SettingsDashboard } from "@/pages/dashboard/SettingsDashboard";
+import { SupportDashboard } from "@/pages/dashboard/SupportDashboard";
 
 // Admin Pages
 import { AdminOverview } from "@/pages/admin/AdminOverview";
@@ -42,6 +42,7 @@ import { AdminAnalytics } from "@/pages/admin/AdminAnalytics";
 import { AdminSettings } from "@/pages/admin/AdminSettings";
 import { AdminSessions } from "@/pages/admin/AdminSessions";
 import { AdminProducts } from "@/pages/admin/AdminProducts";
+import { AdminSupport } from "@/pages/admin/AdminSupport";
 
 export const router = createBrowserRouter([
   {
@@ -77,12 +78,13 @@ export const router = createBrowserRouter([
       { path: "vehicles", element: <VehiclesList /> },
       { path: "vehicles/:vehicleId", element: <VehicleDetails /> },
       { path: "charging", element: <ChargingDashboard /> },
-      { path: "stations", element: <Stations /> },
+      { path: "stations", element: <Navigate to="/dashboard/charging" replace /> },
       { path: "history", element: <ChargingHistory /> },
       { path: "schedules", element: <ChargingSchedules /> },
       { path: "energy", element: <EnergyDashboard /> },
       { path: "notifications", element: <NotificationsDashboard /> },
       { path: "rewards", element: <RewardsDashboard /> },
+      { path: "support", element: <SupportDashboard /> },
       { path: "settings", element: <SettingsDashboard /> }
     ]
   },
@@ -98,6 +100,7 @@ export const router = createBrowserRouter([
       { path: "products", element: <AdminProducts /> },
       { path: "orders", element: <AdminOrders /> },
       { path: "test-drives", element: <AdminTestDrives /> },
+      { path: "support", element: <AdminSupport /> },
       { path: "analytics", element: <AdminAnalytics /> },
       { path: "settings", element: <AdminSettings /> }
     ]

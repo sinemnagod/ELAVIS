@@ -7,8 +7,10 @@ import { useLanguage } from "@/i18n/LanguageContext";
 import { useAuth } from "@/context/AuthContext";
 import vehiclesData from "@/data/vehicles.json";
 import { readStorage, writeStorage, storageKeys } from "@/lib/storage";
+import { formatPhoneInput } from "@/lib/phone";
 import { TestDrive as TestDriveType, Vehicle } from "@/types";
 import { useToast } from "@/context/ToastContext";
+import { vehicleType, vehicleTagline } from "@/data/vehicleTranslations";
 
 // Helper component to pan/zoom the map smoothly when the selected showroom changes
 function ChangeMapView({ center, zoom }: { center: [number, number]; zoom: number }) {
@@ -25,17 +27,23 @@ export function TestDrive() {
   const { showToast } = useToast();
   const [searchParams] = useSearchParams();
 
-  // Available showrooms with real-world coordinates for the map
+  // Available showrooms with real-world coordinates for the map. `name` is the
+  // canonical value stored on the booking (matches Profile.tsx / admin displays);
+  // `nameTr` is only used to render this page's own UI in Turkish.
   const showrooms = [
-    { name: "Kadıköy Showroom (Istanbul)", lat: 40.9927, lng: 29.0275 },
-    { name: "Beşiktaş Showroom (Istanbul)", lat: 41.0422, lng: 29.0061 },
-    { name: "Ataşehir Showroom (Istanbul)", lat: 40.9923, lng: 29.1244 },
-    { name: "Çankaya Showroom (Ankara)", lat: 39.9179, lng: 32.8627 },
-    { name: "Alsancak Showroom (Izmir)", lat: 38.4326, lng: 27.1428 },
-    { name: "Nilüfer Showroom (Bursa)", lat: 40.2148, lng: 28.9636 },
-    { name: "Lara Showroom (Antalya)", lat: 36.8562, lng: 30.7802 },
-    { name: "Seyhan Showroom (Adana)", lat: 37.0000, lng: 35.3213 }
+    { name: "Kadıköy Showroom (Istanbul)", nameTr: "Kadıköy Showroom (İstanbul)", lat: 40.9927, lng: 29.0275 },
+    { name: "Beşiktaş Showroom (Istanbul)", nameTr: "Beşiktaş Showroom (İstanbul)", lat: 41.0422, lng: 29.0061 },
+    { name: "Ataşehir Showroom (Istanbul)", nameTr: "Ataşehir Showroom (İstanbul)", lat: 40.9923, lng: 29.1244 },
+    { name: "Çankaya Showroom (Ankara)", nameTr: "Çankaya Showroom (Ankara)", lat: 39.9179, lng: 32.8627 },
+    { name: "Alsancak Showroom (Izmir)", nameTr: "Alsancak Showroom (İzmir)", lat: 38.4326, lng: 27.1428 },
+    { name: "Nilüfer Showroom (Bursa)", nameTr: "Nilüfer Showroom (Bursa)", lat: 40.2148, lng: 28.9636 },
+    { name: "Lara Showroom (Antalya)", nameTr: "Lara Showroom (Antalya)", lat: 36.8562, lng: 30.7802 },
+    { name: "Seyhan Showroom (Adana)", nameTr: "Seyhan Showroom (Adana)", lat: 37.0000, lng: 35.3213 }
   ];
+
+  // Looks up the localized display label for a stored (English) showroom name.
+  const showroomLabel = (storedName: string) =>
+    language === "en" ? storedName : (showrooms.find((s) => s.name === storedName)?.nameTr || storedName);
 
   const defaultMapCenter: [number, number] = [39.2, 32.0];
   const [mapCenter, setMapCenter] = useState<[number, number]>(defaultMapCenter);
@@ -136,7 +144,10 @@ export function TestDrive() {
       setCreatedBooking(newBooking);
       setSubmitting(false);
       setSuccess(true);
-      showToast("Test drive requested successfully!", "success");
+      showToast(
+        language === "en" ? "Test drive requested successfully!" : "Test sürüşü talebiniz başarıyla alındı!",
+        "success"
+      );
     }, 1000);
   };
 
@@ -196,7 +207,7 @@ export function TestDrive() {
             </div>
             <div className="flex justify-between items-center border-b border-white/5 pb-3">
               <span className="text-xs text-slate-500 uppercase tracking-widest">{t("testDrive.selectedLocation")}</span>
-              <span className="text-sm font-medium text-slate-200">{createdBooking.location}</span>
+              <span className="text-sm font-medium text-slate-200">{showroomLabel(createdBooking.location)}</span>
             </div>
             <div className="flex justify-between items-center border-b border-white/5 pb-3">
               <span className="text-xs text-slate-500 uppercase tracking-widest">{t("testDrive.selectedDate")}</span>
@@ -277,7 +288,7 @@ export function TestDrive() {
                           {v.name}
                         </p>
                         <p className="text-[9px] text-slate-500 uppercase tracking-wide mt-0.5">
-                          {v.type}
+                          {vehicleType(v.id, v.type, language)}
                         </p>
                       </div>
                     </button>
@@ -305,7 +316,7 @@ export function TestDrive() {
                 </option>
                 {showrooms.map((showroom) => (
                   <option key={showroom.name} value={showroom.name} className="bg-site">
-                    {showroom.name}
+                    {showroomLabel(showroom.name)}
                   </option>
                 ))}
               </select>
@@ -333,7 +344,7 @@ export function TestDrive() {
                     >
                       <Popup className="custom-leaflet-popup">
                         <div className="text-xs space-y-2 p-1 font-light text-slate-350">
-                          <h4 className="font-semibold text-white uppercase tracking-wider">{showroom.name}</h4>
+                          <h4 className="font-semibold text-white uppercase tracking-wider">{showroomLabel(showroom.name)}</h4>
                           <button
                             type="button"
                             onClick={() => handleSelectShowroom(showroom)}
@@ -466,8 +477,9 @@ export function TestDrive() {
                   </span>
                   <input
                     type="tel"
+                    inputMode="tel"
                     value={phone}
-                    onChange={(e) => setPhone(e.target.value)}
+                    onChange={(e) => setPhone(formatPhoneInput(e.target.value))}
                     placeholder="+90 555 123 45 67"
                     required
                     className="w-full rounded-xl border border-white/10 bg-black/40 px-4 py-3 text-sm text-slate-200 outline-none focus:border-accent transition"
@@ -504,13 +516,13 @@ export function TestDrive() {
               <div className="p-6 md:p-8 space-y-6">
                 <div>
                   <span className="text-[10px] uppercase tracking-[0.25em] text-accent block font-medium">
-                    {selectedVehicle.type}
+                    {vehicleType(selectedVehicle.id, selectedVehicle.type, language)}
                   </span>
                   <h3 className="text-2xl font-light tracking-widest uppercase text-white mt-1">
                     {selectedVehicle.name}
                   </h3>
                   <p className="text-slate-400 font-light text-xs mt-2 leading-relaxed">
-                    {selectedVehicle.tagline}
+                    {vehicleTagline(selectedVehicle.id, selectedVehicle.tagline, language)}
                   </p>
                 </div>
 
@@ -557,7 +569,7 @@ export function TestDrive() {
                       {language === "en" ? "APPOINTMENT REVIEW" : "REZERVASYON ÖZETİ"}
                     </span>
                     <div className="text-xs font-light text-slate-300 space-y-1">
-                      {location && <p>📍 {location}</p>}
+                      {location && <p>📍 {showroomLabel(location)}</p>}
                       {date && <p>📅 {date}</p>}
                       {time && <p>⏰ {time}</p>}
                     </div>

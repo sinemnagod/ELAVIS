@@ -2,10 +2,18 @@ import { useEffect, useState } from "react";
 import { NavLink, Outlet, Link, useNavigate, useLocation } from "react-router-dom";
 import { useLanguage } from "@/i18n/LanguageContext";
 import { useAuth } from "@/context/AuthContext";
+import { useToast } from "@/context/ToastContext";
 import { readStorage, writeStorage, storageKeys, userStorageKeys } from "@/lib/storage";
 import vehiclesData from "@/data/vehicles.json";
 import notificationsData from "@/data/notifications.json";
-import { Notification, Vehicle } from "@/types";
+import sessionsData from "@/data/sessions.json";
+import stationsData from "@/data/stations.json";
+import { Notification, Vehicle, ChargingSession, ChargingSchedule, Station, SupportTicket } from "@/types";
+import { runDueSchedules, getNextScheduledCharge, formatNextCharge } from "@/lib/scheduleRunner";
+import { vehicleTelemetry, defaultVehicleTelemetry } from "@/data/vehicleTelemetry";
+import { HOME_STATION_ID } from "@/lib/chargingSession";
+import { createReport, addSectionTitle, addStatGrid, addTable, addEmptyNote, finalizeReport } from "@/lib/pdfReport";
+import { priorityOptions, statusOptions } from "@/data/supportCategories";
 
 function LogoText({ className = "" }: { className?: string }) {
   return (
@@ -36,22 +44,13 @@ const dashboardLinks = [
       </svg>
     )
   },
-  { 
-    to: "/dashboard/charging", 
-    labelKey: "dashboard.nav.charging", 
+  {
+    to: "/dashboard/charging",
+    labelKey: "dashboard.nav.charging",
     icon: (
       <svg className="w-5 h-5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M13 10V3L4 14h7v7l9-11h-7z" />
-      </svg>
-    )
-  },
-  { 
-    to: "/dashboard/stations", 
-    labelKey: "dashboard.nav.stations", 
-    icon: (
-      <svg className="w-5 h-5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
       </svg>
     )
   },
@@ -104,6 +103,15 @@ const dashboardLinks = [
     )
   },
   {
+    to: "/dashboard/support",
+    labelKey: "dashboard.nav.support",
+    icon: (
+      <svg className="w-5 h-5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+      </svg>
+    )
+  },
+  {
     to: "/dashboard/settings",
     labelKey: "dashboard.nav.settings",
     icon: (
@@ -116,8 +124,9 @@ const dashboardLinks = [
 ];
 
 export function DashboardLayout() {
-  const { language, changeLanguage, t } = useLanguage();
+  const { language, changeLanguage, t, formatPrice } = useLanguage();
   const { session, logout } = useAuth();
+  const { showToast } = useToast();
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -132,12 +141,12 @@ export function DashboardLayout() {
   // Active Vehicle state for sync
   const userId = session?.user?.id || "guest";
   const [activeVehicleId, setActiveVehicleId] = useState(() => {
-    const defaultVid = session?.user?.ownedVehicleIds?.[0] || "vector";
+    const defaultVid = session?.user?.ownedVehicleIds?.[0] || "";
     return readStorage<string>(userStorageKeys.activeVehicleId(userId), defaultVid);
   });
 
   const [ownedIds, setOwnedIds] = useState<string[]>(() => {
-    return readStorage<string[]>(userStorageKeys.ownedVehicles(userId), session?.user?.ownedVehicleIds || ["vector"]);
+    return readStorage<string[]>(userStorageKeys.ownedVehicles(userId), session?.user?.ownedVehicleIds || []);
   });
 
   // Unread notification count for the sidebar badge
@@ -166,8 +175,8 @@ export function DashboardLayout() {
 
   useEffect(() => {
     const handleSync = () => {
-      setOwnedIds(readStorage<string[]>(userStorageKeys.ownedVehicles(userId), session?.user?.ownedVehicleIds || ["vector"]));
-      setActiveVehicleId(readStorage<string>(userStorageKeys.activeVehicleId(userId), "vector"));
+      setOwnedIds(readStorage<string[]>(userStorageKeys.ownedVehicles(userId), session?.user?.ownedVehicleIds || []));
+      setActiveVehicleId(readStorage<string>(userStorageKeys.activeVehicleId(userId), ""));
     };
     window.addEventListener("storage", handleSync);
     window.addEventListener("activeVehicleChanged", handleSync);
@@ -176,6 +185,26 @@ export function DashboardLayout() {
       window.removeEventListener("activeVehicleChanged", handleSync);
     };
   }, [userId, session]);
+
+  // Check for due charge schedules while any dashboard page is open, and start
+  // a real charging session (home or station) the moment one comes due.
+  useEffect(() => {
+    if (!session) return;
+    const checkSchedules = () => {
+      const triggered = runDueSchedules(userId, ownedIds, language);
+      triggered.forEach((item) => {
+        showToast(
+          language === "en"
+            ? `Scheduled charging started for ${item.vehicleName} (to ${item.limit}% at ${item.destinationName})`
+            : `${item.vehicleName} için planlı şarj başladı (${item.destinationName}, %${item.limit}'e kadar)`,
+          "success"
+        );
+      });
+    };
+    checkSchedules();
+    const interval = setInterval(checkSchedules, 20000);
+    return () => clearInterval(interval);
+  }, [session, userId, ownedIds, language, showToast]);
 
   const selectVehicle = (id: string) => {
     setActiveVehicleId(id);
@@ -190,20 +219,137 @@ export function DashboardLayout() {
     window.scrollTo(0, 0);
   };
 
+  // Builds and downloads the user's personal EVALIS PDF report. Lives in the
+  // layout (not the Overview page) so the sidebar button works from any dashboard route.
+  const handleExportPdf = () => {
+    if (!session) return;
+    const exportUserId = session.user.id;
+    const vehiclesAll = vehiclesData as Vehicle[];
+    const ownedVehicles = vehiclesAll.filter((v) => ownedIds.includes(v.id));
+    const allUserSessions = readStorage<ChargingSession[]>(storageKeys.sessions, sessionsData as ChargingSession[])
+      .filter((s) => s.userId === exportUserId)
+      .sort((a, b) => new Date(b.startedAt).getTime() - new Date(a.startedAt).getTime());
+    const rewardsPoints = readStorage<number>(userStorageKeys.rewardsPoints(exportUserId), 0);
+    const myTickets = readStorage<SupportTicket[]>(storageKeys.supportTickets, []).filter((tk) => tk.userId === exportUserId);
+    const openTickets = myTickets.filter((tk) => tk.status === "open" || tk.status === "in_progress").length;
+    const userSchedules = readStorage<ChargingSchedule[]>(userStorageKeys.schedules(exportUserId), []);
+    const activeVehicleForNext = vehiclesAll.find((v) => v.id === activeVehicleId) || ownedVehicles[0] || vehiclesAll[0];
+    const nextCharge = activeVehicleForNext ? getNextScheduledCharge(userSchedules, activeVehicleForNext.id) : null;
+    const stations = readStorage<Station[]>(storageKeys.stations, stationsData as Station[]);
+
+    const ctx = createReport(
+      language === "en" ? "My EVALIS Report" : "EVALIS Raporum",
+      language === "en"
+        ? `Account summary for ${session.user.name} (${session.user.email})`
+        : `${session.user.name} (${session.user.email}) için hesap özeti`,
+      language
+    );
+
+    addSectionTitle(ctx, language === "en" ? "Account Summary" : "Hesap Özeti");
+    addStatGrid(ctx, [
+      { label: language === "en" ? "Vehicles Owned" : "Sahip Olunan Araç", value: String(ownedVehicles.length) },
+      { label: language === "en" ? "Reward Points" : "Ödül Puanı", value: String(rewardsPoints) },
+      { label: language === "en" ? "Open Support Tickets" : "Açık Destek Talebi", value: String(openTickets) },
+      { label: language === "en" ? "Charging Sessions" : "Şarj Seansı", value: String(allUserSessions.length) },
+      { label: language === "en" ? "Active Schedules" : "Aktif Program", value: String(userSchedules.filter((s) => s.active).length) },
+      { label: language === "en" ? "Next Charge" : "Sonraki Şarj", value: nextCharge ? formatNextCharge(nextCharge, language) : "—" }
+    ]);
+
+    addSectionTitle(ctx, language === "en" ? "My Vehicles" : "Araçlarım");
+    if (ownedVehicles.length === 0) {
+      addEmptyNote(ctx, language === "en" ? "No vehicles registered." : "Kayıtlı araç yok.");
+    } else {
+      addTable(
+        ctx,
+        [
+          language === "en" ? "Vehicle" : "Araç",
+          language === "en" ? "Type" : "Tip",
+          language === "en" ? "Battery" : "Batarya",
+          language === "en" ? "Est. Range" : "Tahmini Menzil"
+        ],
+        ownedVehicles.map((v) => {
+          const settings = readStorage<any>(userStorageKeys.vehicleSettings(exportUserId, v.id), { batteryLevel: v.batteryPercent || 78 });
+          const level = Number(settings.batteryLevel ?? v.batteryPercent ?? 78);
+          const vTelemetry = vehicleTelemetry[v.id] || defaultVehicleTelemetry;
+          return [v.name, v.type, `${Math.round(level)}%`, `${Math.round(level * vTelemetry.rangeFactor)} km`];
+        })
+      );
+    }
+
+    addSectionTitle(ctx, language === "en" ? "Charging Session History" : "Şarj Seansı Geçmişi");
+    if (allUserSessions.length === 0) {
+      addEmptyNote(ctx, language === "en" ? "No charging sessions yet." : "Henüz şarj seansı yok.");
+    } else {
+      addTable(
+        ctx,
+        [
+          language === "en" ? "Date" : "Tarih",
+          language === "en" ? "Vehicle" : "Araç",
+          language === "en" ? "Location" : "Konum",
+          language === "en" ? "Energy" : "Enerji",
+          language === "en" ? "Cost" : "Maliyet",
+          language === "en" ? "Status" : "Durum"
+        ],
+        allUserSessions.slice(0, 25).map((s) => {
+          const v = vehiclesAll.find((veh) => veh.id === s.vehicleId);
+          const locationName = s.stationId === HOME_STATION_ID
+            ? (language === "en" ? "Home" : "Ev")
+            : stations.find((st) => st.id === s.stationId)?.name || s.stationId;
+          return [
+            new Date(s.startedAt).toLocaleDateString(language === "en" ? "en-US" : "tr-TR"),
+            v?.name || s.vehicleId,
+            locationName,
+            `${s.energyKWh.toFixed(1)} kWh`,
+            formatPrice(s.cost, s.cost * 34),
+            s.status === "completed" ? (language === "en" ? "Completed" : "Tamamlandı") : (language === "en" ? "Charging" : "Şarj Oluyor")
+          ];
+        })
+      );
+    }
+
+    addSectionTitle(ctx, language === "en" ? "Support Tickets" : "Destek Talepleri");
+    if (myTickets.length === 0) {
+      addEmptyNote(ctx, language === "en" ? "No support tickets submitted." : "Gönderilmiş destek talebi yok.");
+    } else {
+      addTable(
+        ctx,
+        [
+          language === "en" ? "Ticket" : "Talep",
+          language === "en" ? "Topic" : "Konu",
+          language === "en" ? "Priority" : "Öncelik",
+          language === "en" ? "Status" : "Durum",
+          language === "en" ? "Submitted" : "Gönderim"
+        ],
+        myTickets.map((tk) => [
+          tk.id,
+          tk.issueType,
+          priorityOptions.find((p) => p.value === tk.priority)?.[language] || tk.priority,
+          statusOptions.find((s) => s.value === tk.status)?.[language] || tk.status,
+          new Date(tk.createdAt).toLocaleDateString(language === "en" ? "en-US" : "tr-TR")
+        ])
+      );
+    }
+
+    finalizeReport(ctx, `evalis-report-${exportUserId}-${new Date().toISOString().slice(0, 10)}.pdf`);
+    showToast(language === "en" ? "PDF report downloaded" : "PDF raporu indirildi", "success");
+  };
+
   // Auth Guard
   if (!session) {
     return (
       <div className="min-h-screen bg-[#070b10] flex flex-col items-center justify-center p-6 text-center space-y-4">
-        <h2 className="text-xl uppercase tracking-widest text-red-400">Access Denied</h2>
+        <h2 className="text-xl uppercase tracking-widest text-red-400">{language === "en" ? "Access Denied" : "Erişim Reddedildi"}</h2>
         <p className="text-xs text-slate-500 max-w-xs font-light">
-          Please log in to access your customer dashboard portal. Redirecting to login...
+          {language === "en"
+            ? "Please log in to access your customer dashboard portal. Redirecting to login..."
+            : "Müşteri panelinize erişmek için giriş yapın. Giriş sayfasına yönlendiriliyorsunuz..."}
         </p>
         <div className="w-12 h-0.5 bg-accent/40 animate-pulse mt-2" />
         <button
           onClick={() => navigate("/login")}
           className="rounded-full border border-white/10 px-5 py-2 text-xs uppercase tracking-widest text-slate-400 hover:text-white"
         >
-          Go to Login
+          {language === "en" ? "Go to Login" : "Girişe Git"}
         </button>
       </div>
     );
@@ -356,6 +502,21 @@ export function DashboardLayout() {
             </div>
           )}
 
+          <button
+            onClick={handleExportPdf}
+            title={isCollapsed ? (language === "en" ? "Export Data" : "Verileri Dışa Aktar") : ""}
+            className={`w-full flex items-center ${isCollapsed ? "justify-center px-0" : "gap-3 px-4"} rounded-xl py-3 text-xs uppercase tracking-wider font-semibold transition cursor-pointer ${
+              theme === "light"
+                ? "text-slate-600 hover:bg-slate-100 hover:text-slate-900 border border-transparent"
+                : "text-slate-400 hover:bg-white/5 hover:text-white border border-transparent"
+            }`}
+          >
+            <svg className="w-5 h-5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M12 4v12m0 0l-4-4m4 4l4-4M4 20h16" />
+            </svg>
+            {!isCollapsed && <span>{language === "en" ? "Export Data" : "Verileri Dışa Aktar"}</span>}
+          </button>
+
           <Link
             to="/"
             title={isCollapsed ? t("dashboard.nav.backToSite") : ""}
@@ -368,7 +529,7 @@ export function DashboardLayout() {
             </svg>
             {!isCollapsed && <span>{t("dashboard.nav.backToSite")}</span>}
           </Link>
-          
+
           <button
             onClick={handleLogout}
             title={isCollapsed ? t("nav.logout") : ""}

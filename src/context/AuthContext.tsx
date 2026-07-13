@@ -2,6 +2,7 @@ import React, { createContext, useContext, useState, useEffect } from "react";
 import { readStorage, writeStorage, removeStorage, storageKeys } from "@/lib/storage";
 import { mockLogin, mockLogout, getActiveSession, Session } from "@/lib/auth";
 import { useToast } from "@/context/ToastContext";
+import { useLanguage } from "@/i18n/LanguageContext";
 
 interface AuthContextProps {
   session: Session | null;
@@ -18,6 +19,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [session, setSession] = useState<Session | null>(null);
   const [isLoginOpen, setIsLoginOpen] = useState(false);
   const { showToast } = useToast();
+  const { language } = useLanguage();
 
   useEffect(() => {
     setSession(getActiveSession());
@@ -28,17 +30,25 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     if (res) {
       setSession(res);
       setIsLoginOpen(false);
-      showToast(`Logged in successfully as ${res.user.name}`, "success");
+      showToast(
+        language === "en" ? `Logged in successfully as ${res.user.name}` : `${res.user.name} olarak başarıyla giriş yapıldı`,
+        "success"
+      );
       return true;
     }
-    showToast("Invalid login email. Try customer@evalis.com or admin@evalis.com", "error");
+    showToast(
+      language === "en"
+        ? "Invalid login email. Try customer@evalis.com or admin@evalis.com"
+        : "Geçersiz giriş e-postası. customer@evalis.com veya admin@evalis.com deneyin",
+      "error"
+    );
     return false;
   };
 
   const handleLogout = () => {
     mockLogout();
     setSession(null);
-    showToast("Logged out successfully", "info");
+    showToast(language === "en" ? "Logged out successfully" : "Başarıyla çıkış yapıldı", "info");
   };
 
   const refreshSession = () => {

@@ -58,6 +58,12 @@ export interface Station {
   status: "active" | "maintenance";
   type: "AC" | "DC";
   connector: "CCS2" | "Type 2" | "NACS";
+  network: string; // operator/brand, e.g. "EVALIS" or a third-party network
+  pricePerKwhUSD: number;
+  pricePerKwhTRY: number;
+  rating: number; // 1-5
+  reviewCount: number;
+  amenities: string[]; // e.g. "wifi", "cafe", "restroom", "covered", "247"
 }
 
 export interface FavoriteStation {
@@ -157,4 +163,20 @@ export interface Notification {
   message: string;
   read: boolean;
   createdAt: string;
+}
+
+export interface SupportTicket {
+  id: string;
+  userId: string;
+  userName: string;
+  userEmail: string;
+  category: "vehicle" | "station" | "charging" | "billing" | "account" | "other";
+  contextLabel: string; // e.g. the vehicle name, station name, or "" if not applicable
+  issueType: string;
+  priority: "low" | "medium" | "high" | "urgent";
+  description: string;
+  status: "open" | "in_progress" | "resolved" | "closed";
+  adminReply?: string;
+  createdAt: string;
+  updatedAt: string;
 }

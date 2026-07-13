@@ -64,13 +64,13 @@
     "nav": {
       "overview": "Genel Bakış",
       "vehicles": "Araçlarım",
-      "charging": "Şarj Kontrolü",
-      "stations": "İstasyon Haritası",
+      "charging": "Şarj",
       "history": "Şarj Geçmişi",
       "schedules": "Programlar",
       "energy": "Enerji",
       "notifications": "Bildirimler",
       "rewards": "Ödüller",
+      "support": "Destek",
       "settings": "Ayarlar",
       "backToSite": "Ana Siteye Dön"
     },

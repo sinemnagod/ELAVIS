@@ -33,12 +33,24 @@ export function AdminOverview() {
   const orders = readStorage<Order[]>(storageKeys.orders, []);
   const testDrives = readStorage<TestDrive[]>(storageKeys.testDrives, []);
 
-  // Calculations
-  const totalRevenue = orders.reduce((acc, o) => acc + o.subtotal, 0);
+  // Calculations — normalize to USD first since orders may have been placed in either currency
+  const orderUSD = (o: Order) => (o.currency === "$" ? o.subtotal : o.subtotal / 34);
+  const totalRevenueUSD = orders.reduce((acc, o) => acc + orderUSD(o), 0);
   const pendingTestDrives = testDrives.filter((td) => td.status === "pending").length;
   const activeStations = stations.filter((s) => s.status === "active").length;
 
-  const currency = language === "en" ? "$" : "₺";
+  const testDriveStatusLabels: Record<TestDrive["status"], { en: string; tr: string }> = {
+    pending: { en: "Pending", tr: "Beklemede" },
+    confirmed: { en: "Confirmed", tr: "Onaylandı" },
+    completed: { en: "Completed", tr: "Tamamlandı" }
+  };
+  const orderStatusLabels: Record<Order["status"], { en: string; tr: string }> = {
+    processing: { en: "Processing", tr: "İşleniyor" },
+    shipped: { en: "Shipped", tr: "Kargoda" },
+    delivered: { en: "Delivered", tr: "Teslim Edildi" },
+    cancellation_requested: { en: "Cancellation Requested", tr: "İptal Talep Edildi" },
+    cancelled: { en: "Cancelled", tr: "İptal Edildi" }
+  };
 
   return (
     <div className="space-y-8 animate-fade-in pb-10 text-slate-800 dark:text-slate-100">
@@ -65,7 +77,7 @@ export function AdminOverview() {
           <div className="dash-inset px-4 py-2 rounded-xl flex items-center gap-3">
             <span className="text-lg" aria-hidden="true">☀️</span>
             <div>
-              <p className="font-semibold text-slate-800 dark:text-slate-200">Istanbul · 24°C</p>
+              <p className="font-semibold text-slate-800 dark:text-slate-200">{language === "en" ? "Istanbul" : "İstanbul"} · 24°C</p>
               <p className="text-[9px] text-slate-500 font-mono mt-0.5">
                 {language === "en" ? "Sunny" : "Güneşli"}
               </p>
@@ -122,7 +134,7 @@ export function AdminOverview() {
           </span>
           <div className="flex justify-between items-baseline pt-2">
             <span className="text-2xl font-bold text-accent font-mono">
-              {currency}{totalRevenue.toLocaleString()}
+              {formatPrice(totalRevenueUSD, totalRevenueUSD * 34)}
             </span>
             <span className="text-[9px] text-slate-500 font-bold uppercase font-mono">{orders.length} {language === "en" ? "Orders" : "Sipariş"}</span>
           </div>
@@ -173,7 +185,7 @@ export function AdminOverview() {
                       ? "bg-amber-500/10 border border-amber-500/20 text-amber-500"
                       : "bg-accent/10 border border-accent/20 text-accent"
                   }`}>
-                    {drive.status}
+                    {language === "en" ? testDriveStatusLabels[drive.status].en : testDriveStatusLabels[drive.status].tr}
                   </span>
                 </div>
               ))}
@@ -209,7 +221,7 @@ export function AdminOverview() {
                       {order.currency}{order.subtotal.toLocaleString()}
                     </span>
                     <span className="px-2.5 py-0.5 rounded-full text-[8px] font-bold tracking-widest bg-amber-500/15 border border-amber-500/25 text-amber-500 uppercase">
-                      {order.status}
+                      {language === "en" ? orderStatusLabels[order.status].en : orderStatusLabels[order.status].tr}
                     </span>
                   </div>
                 </div>

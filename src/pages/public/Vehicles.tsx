@@ -1,6 +1,7 @@
 import { Link } from "react-router-dom";
 import { useLanguage } from "@/i18n/LanguageContext";
 import vehiclesData from "@/data/vehicles.json";
+import { vehicleType, vehicleTagline, vehicleDescription } from "@/data/vehicleTranslations";
 
 export function Vehicles() {
   const { t, language } = useLanguage();
@@ -45,16 +46,16 @@ export function Vehicles() {
               <div className="w-full lg:w-2/5 space-y-6 flex flex-col justify-between">
                 <div className="space-y-3">
                   <span className="text-[10px] uppercase tracking-[0.25em] text-accent">
-                    {vehicle.type}
+                    {vehicleType(vehicle.id, vehicle.type, language)}
                   </span>
                   <h2 className="text-3xl font-light tracking-widest uppercase text-white hover:text-accent transition">
                     <Link to={`/vehicles/${vehicle.id}`}>{vehicle.name}</Link>
                   </h2>
                   <p className="text-slate-300 font-light text-sm leading-relaxed">
-                    {vehicle.tagline}
+                    {vehicleTagline(vehicle.id, vehicle.tagline, language)}
                   </p>
                   <p className="text-slate-400 font-light text-xs leading-relaxed">
-                    {vehicle.description}
+                    {vehicleDescription(vehicle.id, vehicle.description, language)}
                   </p>
                 </div>
 

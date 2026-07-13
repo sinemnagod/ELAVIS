@@ -6,6 +6,7 @@ import sessionsData from "@/data/sessions.json";
 import stationsData from "@/data/stations.json";
 import vehiclesData from "@/data/vehicles.json";
 import { ChargingSession, Station, Vehicle } from "@/types";
+import { HOME_STATION_ID } from "@/lib/chargingSession";
 
 function loadSessions(): ChargingSession[] {
   return readStorage<ChargingSession[]>(storageKeys.sessions, sessionsData as ChargingSession[]);
@@ -125,6 +126,7 @@ export function ChargingHistory() {
               </thead>
               <tbody className="divide-y divide-white/5 font-mono text-[11px]">
                 {userSessions.map((sess) => {
+                  const isHome = sess.stationId === HOME_STATION_ID;
                   const stationObj = stations.find((s) => s.id === sess.stationId);
                   const started = new Date(sess.startedAt);
                   const ended = new Date(sess.endedAt || sess.startedAt);
@@ -139,10 +141,18 @@ export function ChargingHistory() {
                       <td className="px-6 py-4 font-semibold text-slate-450">{sess.id}</td>
                       <td className="px-6 py-4 font-sans">
                         <p className="font-semibold text-slate-200 uppercase tracking-wider text-xs">
-                          {stationObj ? stationObj.name : "EVALIS Charger"}
+                          {isHome
+                            ? (language === "en" ? "Home Charging" : "Ev Şarjı")
+                            : stationObj
+                              ? stationObj.name
+                              : (language === "en" ? "EVALIS Charger" : "EVALIS Şarj Cihazı")}
                         </p>
                         <p className="text-[9px] text-slate-500 font-mono mt-0.5">
-                          {stationObj ? `${stationObj.type} (${stationObj.connector})` : "DC (CCS2)"}
+                          {isHome
+                            ? (language === "en" ? "EVALIS Home Box" : "EVALIS Ev Kutusu")
+                            : stationObj
+                              ? `${stationObj.type} (${stationObj.connector})`
+                              : "DC (CCS2)"}
                         </p>
                       </td>
                       <td className="px-6 py-4 text-slate-400 font-sans">
@@ -172,6 +182,7 @@ export function ChargingHistory() {
 
       {/* Session Detail / Invoice Modal */}
       {selectedSession && (() => {
+        const isHome = selectedSession.stationId === HOME_STATION_ID;
         const stationObj = stations.find((s) => s.id === selectedSession.stationId);
         const vehicleObj = vehicles.find((v) => v.id === selectedSession.vehicleId);
         const started = new Date(selectedSession.startedAt);
@@ -184,7 +195,7 @@ export function ChargingHistory() {
             onClick={() => setSelectedSession(null)}
           >
             <div
-              className="dash-panel max-w-md w-full p-6 space-y-5 shadow-2xl bg-[#0e1423]"
+              className="rounded-[28px] border border-white/10 max-w-md w-full p-6 space-y-5 shadow-2xl bg-[#0e1423]"
               onClick={(e) => e.stopPropagation()}
             >
               <div className="flex justify-between items-center border-b border-white/5 pb-3">
@@ -211,7 +222,11 @@ export function ChargingHistory() {
                   <span className="text-slate-500 uppercase tracking-widest text-[9px] font-bold">
                     {language === "en" ? "Station" : "İstasyon"}
                   </span>
-                  <span className="font-mono text-slate-200">{stationObj?.name || selectedSession.stationId}</span>
+                  <span className="font-mono text-slate-200">
+                    {isHome
+                      ? (language === "en" ? "Home Charging" : "Ev Şarjı")
+                      : stationObj?.name || selectedSession.stationId}
+                  </span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-slate-500 uppercase tracking-widest text-[9px] font-bold">

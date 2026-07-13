@@ -255,7 +255,7 @@ export function AdminOrders() {
           onClick={() => setSelectedOrder(null)}
         >
           <div
-            className="dash-panel max-w-lg w-full p-6 space-y-5 shadow-2xl bg-white dark:bg-[#0e1423] max-h-[85vh] overflow-y-auto"
+            className="rounded-[28px] border border-slate-200 dark:border-white/10 max-w-lg w-full p-6 space-y-5 shadow-2xl bg-white dark:bg-[#0e1423] max-h-[85vh] overflow-y-auto"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex justify-between items-center border-b border-slate-200 dark:border-white/5 pb-3">

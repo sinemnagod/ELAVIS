@@ -9,8 +9,11 @@ import { useCart } from "@/context/CartContext";
 import { readStorage, writeStorage, storageKeys } from "@/lib/storage";
 import vehiclesData from "@/data/vehicles.json";
 import productsDataRaw from "@/data/products.json";
+import productCategoriesData from "@/data/productCategories.json";
 import stationsData from "@/data/stations.json";
-import { Station, Product } from "@/types";
+import { Station, Product, ProductCategory } from "@/types";
+import { vehicleType } from "@/data/vehicleTranslations";
+import { productName, productShortDescription, productFullDescription, productCategoryLabelsTr } from "@/data/productTranslations";
 
 const productsData = productsDataRaw as Product[];
 
@@ -23,12 +26,38 @@ function ChangeMapView({ center, zoom }: { center: [number, number]; zoom: numbe
   return null;
 }
 
+function StationStars({ rating }: { rating: number }) {
+  const filled = Math.round(rating);
+  return (
+    <span className="inline-flex items-center gap-0.5" aria-hidden="true">
+      {Array.from({ length: 5 }).map((_, i) => (
+        <svg
+          key={i}
+          className={`w-2.5 h-2.5 ${i < filled ? "text-amber-400" : "text-slate-600"}`}
+          fill="currentColor"
+          viewBox="0 0 20 20"
+        >
+          <path d="M10 1.5l2.6 5.6 6.1.6-4.6 4.1 1.3 6-5.4-3.1-5.4 3.1 1.3-6-4.6-4.1 6.1-.6z" />
+        </svg>
+      ))}
+    </span>
+  );
+}
+
 export function Home() {
   const { t, formatPrice, language } = useLanguage();
   const { addToCart, setIsCartOpen } = useCart();
 
   const [quickViewProduct, setQuickViewProduct] = useState<any | null>(null);
   const [carouselIndex, setCarouselIndex] = useState(0);
+
+  const categoryLabel = (categoryId: string) => {
+    const cat = readStorage<ProductCategory[]>(storageKeys.productCategories, productCategoriesData as ProductCategory[]).find(
+      (c) => c.id === categoryId
+    );
+    if (!cat) return categoryId;
+    return language === "en" ? cat.name : productCategoryLabelsTr[categoryId] || cat.name;
+  };
 
   // Bestsellers row scroll controls
   const bestSellersRef = useRef<HTMLDivElement>(null);
@@ -45,7 +74,7 @@ export function Home() {
   // Load stations from local storage to keep CRUD operations synchronized
   const [stations] = useState<Station[]>(() => {
     const stored = readStorage<Station[]>(storageKeys.stations, []);
-    if (stored.length === 0 || stored.some((s) => !s.type)) {
+    if (stored.length === 0 || stored.some((s) => !s.type || s.rating === undefined)) {
       writeStorage(storageKeys.stations, stationsData as Station[]);
       return stationsData as Station[];
     }
@@ -128,13 +157,13 @@ export function Home() {
           </h1>
           <div className="w-24 h-px bg-white/10 mx-auto my-4 animate-pulse" />
           <p className="text-[11px] md:text-[13px] tracking-[0.65em] uppercase text-slate-455 font-extralight font-orbitron pl-[0.65em]">
-            DRIVE THE FUTURE
+            {language === "en" ? "DRIVE THE FUTURE" : "GELECEĞİ SÜR"}
           </p>
         </div>
 
         {/* Bottom Tagline */}
         <div className="relative z-10 text-[10px] md:text-xs uppercase tracking-[0.4em] text-slate-500 font-extralight pl-[0.4em] animate-fade-in-up">
-          Intelligent &bull; Electric &bull; Effortless
+          {language === "en" ? "Intelligent • Electric • Effortless" : "Akıllı • Elektrikli • Zahmetsiz"}
         </div>
       </section>
 
@@ -196,7 +225,7 @@ export function Home() {
                         {vehicle.name}
                       </h3>
                       <p className="text-xs text-slate-400 font-light mt-1">
-                        {vehicle.type}
+                        {vehicleType(vehicle.id, vehicle.type, language)}
                       </p>
                     </div>
                     <div className="w-8 h-8 rounded-full border border-white/15 flex items-center justify-center text-slate-400 group-hover:border-accent group-hover:text-accent transition duration-300">
@@ -321,14 +350,14 @@ export function Home() {
                   <div className="p-6 pb-2 space-y-2 border-t border-white/5">
                     <div className="flex justify-between items-start gap-2">
                       <h3 className="text-md font-light uppercase tracking-wider text-white">
-                        {product.name}
+                        {productName(product.id, product.name, language)}
                       </h3>
                       <span className="text-sm font-semibold text-accent shrink-0">
                         {formatPrice(product.priceUSD, product.priceTRY)}
                       </span>
                     </div>
                     <p className="text-xs text-slate-400 font-light mt-0.5 line-clamp-2">
-                      {product.shortDescription}
+                      {productShortDescription(product.id, product.shortDescription, language)}
                     </p>
                   </div>
                 </div>
@@ -374,7 +403,7 @@ export function Home() {
                   filterType === "ALL" ? "bg-accent border-accent text-black font-extrabold" : "border-white/10 text-slate-400 hover:text-white"
                 }`}
               >
-                All ({stations.length})
+                {language === "en" ? "All" : "Tümü"} ({stations.length})
               </button>
               <button
                 onClick={() => setFilterType("DC")}
@@ -428,6 +457,12 @@ export function Home() {
                           </h4>
                           <span className={`w-2 h-2 rounded-full shrink-0 mt-1 ${isActive ? "bg-accent shadow-[0_0_6px_#2a7a5f]" : "bg-red-500"}`} />
                         </div>
+                        <div className="flex items-center gap-1.5">
+                          <StationStars rating={station.rating} />
+                          <span className="text-[8px] text-slate-500 font-mono">
+                            {station.rating.toFixed(1)} ({station.reviewCount})
+                          </span>
+                        </div>
                         <p className="text-[10px] text-slate-500 font-mono flex items-center gap-1.5 flex-wrap">
                           <span>⚡ {station.power}</span>
                           <span>•</span>
@@ -437,11 +472,28 @@ export function Home() {
                         </p>
                       </div>
 
-                      <div className="flex justify-between items-center text-[10px] border-t border-white/5 pt-2">
-                        <span>{language === "en" ? "Available Ports" : "Kullanılabilir Soket"}</span>
-                        <span className={`font-semibold ${station.availablePorts > 0 ? "text-accent" : "text-red-400"}`}>
-                          {station.availablePorts} / {station.totalPorts}
-                        </span>
+                      <div className="space-y-1.5">
+                        <div className="flex justify-between items-center text-[10px] border-t border-white/5 pt-2">
+                          <span>{language === "en" ? "Available Ports" : "Kullanılabilir Soket"}</span>
+                          <span className={`font-semibold ${station.availablePorts > 0 ? "text-accent" : "text-red-400"}`}>
+                            {station.availablePorts} / {station.totalPorts}
+                          </span>
+                        </div>
+                        <div className="flex justify-between items-center text-[10px]">
+                          <span>{language === "en" ? "Price" : "Fiyat"}</span>
+                          <span className="text-slate-300 font-mono">
+                            {formatPrice(station.pricePerKwhUSD, station.pricePerKwhTRY)}/kWh
+                          </span>
+                        </div>
+                        <a
+                          href={`https://www.google.com/maps/dir/?api=1&destination=${station.latitude},${station.longitude}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          onClick={(e) => e.stopPropagation()}
+                          className="block text-center text-[9px] uppercase tracking-widest text-accent hover:text-white font-bold transition pt-1"
+                        >
+                          {language === "en" ? "Get Directions" : "Yol Tarifi Al"}
+                        </a>
                       </div>
                     </div>
                   );
@@ -472,12 +524,25 @@ export function Home() {
                     icon={getCustomMarkerIcon(isActive, station.type)}
                   >
                     <Popup>
-                      <div className="text-slate-900 p-1 space-y-1">
+                      <div className="text-slate-900 p-1 space-y-1 min-w-[160px]">
                         <h4 className="font-bold text-xs uppercase tracking-wide border-b border-slate-200 pb-1">{station.name}</h4>
-                        <p className="text-[10px] font-mono">Power: <span className="font-semibold">{station.power}</span></p>
-                        <p className="text-[10px] font-mono">Type: <span className="font-semibold text-emerald-600 font-bold">{station.type} ({station.connector})</span></p>
-                        <p className="text-[10px] font-mono">Ports: <span className="font-semibold">{station.availablePorts} / {station.totalPorts}</span></p>
-                        <p className="text-[10px] font-mono">Status: <span className={`font-bold ${isActive ? "text-emerald-600" : "text-red-500"}`}>{station.status.toUpperCase()}</span></p>
+                        <div className="flex items-center gap-1.5">
+                          <StationStars rating={station.rating} />
+                          <span className="text-[9px] font-mono text-slate-600">{station.rating.toFixed(1)} ({station.reviewCount})</span>
+                        </div>
+                        <p className="text-[10px] font-mono">{language === "en" ? "Power" : "Güç"}: <span className="font-semibold">{station.power}</span></p>
+                        <p className="text-[10px] font-mono">{language === "en" ? "Type" : "Tip"}: <span className="font-semibold text-emerald-600 font-bold">{station.type} ({station.connector})</span></p>
+                        <p className="text-[10px] font-mono">{language === "en" ? "Ports" : "Soket"}: <span className="font-semibold">{station.availablePorts} / {station.totalPorts}</span></p>
+                        <p className="text-[10px] font-mono">{language === "en" ? "Price" : "Fiyat"}: <span className="font-semibold">{formatPrice(station.pricePerKwhUSD, station.pricePerKwhTRY)}/kWh</span></p>
+                        <p className="text-[10px] font-mono">{language === "en" ? "Status" : "Durum"}: <span className={`font-bold ${isActive ? "text-emerald-600" : "text-red-500"}`}>{isActive ? (language === "en" ? "ACTIVE" : "AKTİF") : (language === "en" ? "MAINTENANCE" : "BAKIMDA")}</span></p>
+                        <a
+                          href={`https://www.google.com/maps/dir/?api=1&destination=${station.latitude},${station.longitude}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="block text-center mt-1 pt-1 border-t border-slate-200 text-[9px] uppercase tracking-widest font-bold text-emerald-600 hover:text-emerald-700 transition"
+                        >
+                          {language === "en" ? "Get Directions" : "Yol Tarifi Al"}
+                        </a>
                       </div>
                     </Popup>
                   </Marker>
@@ -569,10 +634,10 @@ export function Home() {
               <div className="space-y-4">
                 <div>
                   <span className="text-[10px] text-accent uppercase tracking-widest block font-medium">
-                    {quickViewProduct.category}
+                    {categoryLabel(quickViewProduct.category)}
                   </span>
                   <h2 className="text-3xl font-light uppercase tracking-widest text-white mt-1">
-                    {quickViewProduct.name}
+                    {productName(quickViewProduct.id, quickViewProduct.name, language)}
                   </h2>
                 </div>
 
@@ -586,7 +651,7 @@ export function Home() {
                 </div>
 
                 <p className="text-slate-300 font-light text-sm leading-relaxed">
-                  {quickViewProduct.fullDescription}
+                  {productFullDescription(quickViewProduct.id, quickViewProduct.fullDescription, language)}
                 </p>
               </div>
 

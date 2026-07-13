@@ -6,6 +6,7 @@ import { readStorage, writeStorage, storageKeys, userStorageKeys } from "@/lib/s
 import vehiclesData from "@/data/vehicles.json";
 import { User, Vehicle } from "@/types";
 import { useToast } from "@/context/ToastContext";
+import { vehicleType } from "@/data/vehicleTranslations";
 
 interface VehicleRequest {
   id: string;
@@ -26,8 +27,8 @@ export function VehiclesList() {
 
   // Load owned vehicle IDs from local storage or session
   const [ownedIds, setOwnedIds] = useState<string[]>(() => {
-    if (!user) return ["vector"];
-    return readStorage<string[]>(userStorageKeys.ownedVehicles(user.id), user.ownedVehicleIds || ["vector"]);
+    if (!user) return [];
+    return readStorage<string[]>(userStorageKeys.ownedVehicles(user.id), user.ownedVehicleIds || []);
   });
 
   // Load vehicle registration requests
@@ -201,7 +202,7 @@ export function VehiclesList() {
                 type="text"
                 value={plate}
                 onChange={(e) => setPlate(e.target.value)}
-                placeholder="e.g. 34 EV 100"
+                placeholder={language === "en" ? "e.g. 34 EV 100" : "örn. 34 EV 100"}
                 className="w-full rounded-xl border border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-black/40 px-4 py-2.5 text-slate-800 dark:text-slate-200 outline-none focus:border-accent"
                 required
               />
@@ -216,7 +217,7 @@ export function VehiclesList() {
                 type="text"
                 value={vin}
                 onChange={(e) => setVin(e.target.value)}
-                placeholder="e.g. EV100987VCTR"
+                placeholder={language === "en" ? "e.g. EV100987VCTR" : "örn. EV100987VCTR"}
                 className="w-full rounded-xl border border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-black/40 px-4 py-2.5 text-slate-800 dark:text-slate-200 outline-none focus:border-accent font-mono"
                 required
               />
@@ -242,6 +243,13 @@ export function VehiclesList() {
       )}
 
       {/* Owned Vehicles Grid */}
+      {ownedVehicles.length === 0 && userRequests.length === 0 && (
+        <div className="dash-panel p-10 text-center text-xs text-slate-500 uppercase tracking-widest">
+          {language === "en"
+            ? "You don't own any vehicles yet — add one to get started"
+            : "Henüz bir aracınız yok — başlamak için bir araç ekleyin"}
+        </div>
+      )}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {ownedVehicles.map((vehicle) => {
           const battery = vehicle.batteryPercent || 78;
@@ -257,7 +265,7 @@ export function VehiclesList() {
                 <div className="flex justify-between items-start">
                   <div>
                     <span className="text-[9px] uppercase tracking-widest text-accent font-bold">
-                      {vehicle.type}
+                      {vehicleType(vehicle.id, vehicle.type, language)}
                     </span>
                     <h3 className="text-lg font-light uppercase tracking-wider text-slate-800 dark:text-slate-100 mt-1">
                       {vehicle.name}
@@ -336,7 +344,7 @@ export function VehiclesList() {
                         {vehicleObj?.name || req.modelId}
                       </p>
                       <p className="text-[8px] text-slate-500 font-mono mt-0.5">
-                        Plate: {req.plate} | VIN: {req.vin}
+                        {language === "en" ? "Plate" : "Plaka"}: {req.plate} | VIN: {req.vin}
                       </p>
                     </div>
                   </div>

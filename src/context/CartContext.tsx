@@ -2,6 +2,8 @@ import React, { createContext, useContext, useState, useEffect } from "react";
 import { readStorage, writeStorage, storageKeys } from "@/lib/storage";
 import { Product } from "@/types";
 import { useToast } from "@/context/ToastContext";
+import { useLanguage } from "@/i18n/LanguageContext";
+import { productName } from "@/data/productTranslations";
 
 export interface CartItem {
   product: Product;
@@ -25,6 +27,7 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [cart, setCart] = useState<CartItem[]>(() => readStorage<CartItem[]>(storageKeys.cart, []));
   const [isCartOpen, setIsCartOpen] = useState(false);
   const { showToast } = useToast();
+  const { language } = useLanguage();
 
   useEffect(() => {
     writeStorage(storageKeys.cart, cart);
@@ -35,13 +38,20 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const addToCart = (product: Product) => {
     setCart((prev) => {
       const existing = prev.find((item) => item.product.id === product.id);
+      const localizedName = productName(product.id, product.name, language);
       if (existing) {
-        showToast(`Increased quantity of ${product.name}`, "info");
+        showToast(
+          language === "en" ? `Increased quantity of ${localizedName}` : `${localizedName} miktarı artırıldı`,
+          "info"
+        );
         return prev.map((item) =>
           item.product.id === product.id ? { ...item, quantity: item.quantity + 1 } : item
         );
       }
-      showToast(`Added ${product.name} to cart`, "success");
+      showToast(
+        language === "en" ? `Added ${localizedName} to cart` : `${localizedName} sepete eklendi`,
+        "success"
+      );
       return [...prev, { product, quantity: 1 }];
     });
     // Auto-open drawer when adding an item for premium feedback
@@ -51,7 +61,11 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const removeFromCart = (productId: string) => {
     const item = cart.find((i) => i.product.id === productId);
     if (item) {
-      showToast(`Removed ${item.product.name} from cart`, "info");
+      const localizedName = productName(item.product.id, item.product.name, language);
+      showToast(
+        language === "en" ? `Removed ${localizedName} from cart` : `${localizedName} sepetten çıkarıldı`,
+        "info"
+      );
     }
     setCart((prev) => prev.filter((item) => item.product.id !== productId));
   };
@@ -66,8 +80,9 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
     );
   };
 
+  // No toast here — the only caller is Checkout on order success, where an
+  // "order placed" confirmation already covers the feedback.
   const clearCart = () => {
-    showToast("Cart cleared", "info");
     setCart([]);
   };
 

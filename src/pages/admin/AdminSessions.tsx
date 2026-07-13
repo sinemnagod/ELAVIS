@@ -6,6 +6,7 @@ import usersData from "@/data/users.json";
 import vehiclesData from "@/data/vehicles.json";
 import stationsData from "@/data/stations.json";
 import { ChargingSession, User, Vehicle, Station } from "@/types";
+import { HOME_STATION_ID } from "@/lib/chargingSession";
 
 function loadSessions(): ChargingSession[] {
   return readStorage<ChargingSession[]>(storageKeys.sessions, sessionsData as ChargingSession[]);
@@ -48,8 +49,8 @@ export function AdminSessions() {
   });
 
   // Metric summaries
-  const totalEnergy = filteredSessions.reduce((acc, s) => acc + s.energyKWh, 0);
-  const totalRevenue = filteredSessions.reduce((acc, s) => acc + s.cost, 0);
+  const totalEnergy = filteredSessions.reduce((acc, s) => acc + Math.max(0, s.energyKWh), 0);
+  const totalRevenue = filteredSessions.reduce((acc, s) => acc + Math.max(0, s.cost), 0);
   const completedCount = filteredSessions.filter((s) => s.status === "completed").length;
 
   return (
@@ -179,8 +180,9 @@ export function AdminSessions() {
                 {filteredSessions.map((sess) => {
                   const customer = users.find((u) => u.id === sess.userId);
                   const vehicleObj = vehicles.find((v) => v.id === sess.vehicleId);
+                  const isHome = sess.stationId === HOME_STATION_ID;
                   const stationObj = stations.find((s) => s.id === sess.stationId);
-                  
+
                   return (
                     <tr key={sess.id} className="hover:bg-slate-50 dark:hover:bg-white/[0.01] transition duration-200">
                       <td className="px-6 py-4 font-semibold text-slate-400 dark:text-slate-450">{sess.id}</td>
@@ -192,7 +194,11 @@ export function AdminSessions() {
                         {vehicleObj ? vehicleObj.name : sess.vehicleId}
                       </td>
                       <td className="px-6 py-4 font-sans font-semibold text-slate-650 dark:text-slate-350 uppercase tracking-wider text-xs">
-                        {stationObj ? stationObj.name : "EVALIS Supercharger"}
+                        {isHome
+                          ? (language === "en" ? "Home Charging" : "Ev Şarjı")
+                          : stationObj
+                            ? stationObj.name
+                            : (language === "en" ? "EVALIS Supercharger" : "EVALIS Supercharger İstasyonu")}
                       </td>
                       <td className="px-6 py-4 text-slate-700 dark:text-slate-200">{sess.energyKWh} kWh</td>
                       <td className="px-6 py-4 text-accent font-semibold">
@@ -200,7 +206,7 @@ export function AdminSessions() {
                       </td>
                       <td className="px-6 py-4 text-right font-sans">
                         <span className="px-2.5 py-0.5 rounded-full text-[8px] font-bold tracking-widest uppercase bg-accent/10 border border-accent/20 text-accent">
-                          {sess.status}
+                          {sess.status === "completed" ? (language === "en" ? "Completed" : "Tamamlandı") : (language === "en" ? "Charging" : "Şarj Oluyor")}
                         </span>
                       </td>
                     </tr>

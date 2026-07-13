@@ -12,7 +12,7 @@ export function AdminStations() {
   // Load stations from storage or fall back to seed JSON
   const [stations, setStations] = useState<Station[]>(() => {
     const stored = readStorage<Station[]>(storageKeys.stations, []);
-    if (stored.length === 0 || stored.some((s) => !s.type)) {
+    if (stored.length === 0 || stored.some((s) => !s.type || s.rating === undefined)) {
       writeStorage(storageKeys.stations, stationsData as Station[]);
       return stationsData as Station[];
     }
@@ -47,6 +47,8 @@ export function AdminStations() {
   const [status, setStatus] = useState<"active" | "maintenance">("active");
   const [type, setType] = useState<Station["type"]>("DC");
   const [connector, setConnector] = useState<Station["connector"]>("CCS2");
+  const [network, setNetwork] = useState("EVALIS");
+  const [pricePerKwhUSD, setPricePerKwhUSD] = useState(0.35);
 
   // Filters state
   const [statusFilter, setStatusFilter] = useState("ALL");
@@ -63,6 +65,8 @@ export function AdminStations() {
     setStatus("active");
     setType("DC");
     setConnector("CCS2");
+    setNetwork("EVALIS");
+    setPricePerKwhUSD(0.35);
     setEditingStation(null);
     setIsFormOpen(false);
   };
@@ -83,12 +87,16 @@ export function AdminStations() {
     setStatus(station.status);
     setType(station.type || "DC");
     setConnector(station.connector || "CCS2");
+    setNetwork(station.network || "EVALIS");
+    setPricePerKwhUSD(station.pricePerKwhUSD ?? 0.35);
     setIsFormOpen(true);
   };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!name) return;
+
+    const pricePerKwhTRY = Number((Number(pricePerKwhUSD) * 34).toFixed(2));
 
     if (editingStation) {
       setStations((prev) =>
@@ -104,7 +112,10 @@ export function AdminStations() {
                 availablePorts: Math.min(Number(availablePorts), Number(totalPorts)),
                 status,
                 type,
-                connector
+                connector,
+                network,
+                pricePerKwhUSD: Number(pricePerKwhUSD),
+                pricePerKwhTRY
               }
             : s
         )
@@ -124,7 +135,13 @@ export function AdminStations() {
         availablePorts: Math.min(Number(availablePorts), Number(totalPorts)),
         status,
         type,
-        connector
+        connector,
+        network,
+        pricePerKwhUSD: Number(pricePerKwhUSD),
+        pricePerKwhTRY,
+        rating: 5,
+        reviewCount: 0,
+        amenities: []
       };
       setStations((prev) => [...prev, newStation]);
       showToast(
@@ -234,8 +251,8 @@ export function AdminStations() {
             className="w-full bg-slate-100/50 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-xl px-4 py-2 text-xs text-slate-800 dark:text-slate-200 outline-none focus:border-accent/40 transition"
           >
             <option value="ALL" className="bg-white dark:bg-[#0a0f18] text-slate-800 dark:text-slate-200">{language === "en" ? "All Types" : "Tüm Tipler"}</option>
-            <option value="DC" className="bg-white dark:bg-[#0a0f18] text-slate-800 dark:text-slate-200">DC (Fast Charging)</option>
-            <option value="AC" className="bg-white dark:bg-[#0a0f18] text-slate-800 dark:text-slate-200">AC (Slow Charging)</option>
+            <option value="DC" className="bg-white dark:bg-[#0a0f18] text-slate-800 dark:text-slate-200">{language === "en" ? "DC (Fast Charging)" : "DC (Hızlı Şarj)"}</option>
+            <option value="AC" className="bg-white dark:bg-[#0a0f18] text-slate-800 dark:text-slate-200">{language === "en" ? "AC (Slow Charging)" : "AC (Yavaş Şarj)"}</option>
           </select>
         </div>
       </div>
@@ -267,7 +284,7 @@ export function AdminStations() {
                 type="text"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
-                placeholder="e.g. EVALIS Kadıköy Supercharger"
+                placeholder={language === "en" ? "e.g. EVALIS Kadıköy Supercharger" : "örn. EVALIS Kadıköy Supercharger"}
                 className="w-full rounded-xl border border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-black/40 px-4 py-2.5 text-slate-800 dark:text-slate-200 outline-none focus:border-accent"
                 required
               />
@@ -281,14 +298,43 @@ export function AdminStations() {
                 type="text"
                 value={power}
                 onChange={(e) => setPower(e.target.value)}
-                placeholder="e.g. 250 kW"
+                placeholder={language === "en" ? "e.g. 250 kW" : "örn. 250 kW"}
                 className="w-full rounded-xl border border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-black/40 px-4 py-2.5 text-slate-800 dark:text-slate-200 outline-none focus:border-accent"
                 required
               />
             </div>
 
             <div className="space-y-2">
-              <span className="text-[9px] text-slate-500 uppercase tracking-widest block font-bold">Latitude</span>
+              <span className="text-[9px] text-slate-500 uppercase tracking-widest block font-bold">
+                {language === "en" ? "Network / Operator" : "Şebeke / İşletmeci"}
+              </span>
+              <input
+                type="text"
+                value={network}
+                onChange={(e) => setNetwork(e.target.value)}
+                placeholder={language === "en" ? "e.g. EVALIS" : "örn. EVALIS"}
+                className="w-full rounded-xl border border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-black/40 px-4 py-2.5 text-slate-800 dark:text-slate-200 outline-none focus:border-accent"
+                required
+              />
+            </div>
+
+            <div className="space-y-2">
+              <span className="text-[9px] text-slate-500 uppercase tracking-widest block font-bold">
+                {language === "en" ? "Price per kWh (USD)" : "kWh Başına Fiyat (USD)"}
+              </span>
+              <input
+                type="number"
+                step="0.01"
+                min="0"
+                value={pricePerKwhUSD}
+                onChange={(e) => setPricePerKwhUSD(Number(e.target.value))}
+                className="w-full rounded-xl border border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-black/40 px-4 py-2.5 text-slate-800 dark:text-slate-200 outline-none focus:border-accent font-mono"
+                required
+              />
+            </div>
+
+            <div className="space-y-2">
+              <span className="text-[9px] text-slate-500 uppercase tracking-widest block font-bold">{language === "en" ? "Latitude" : "Enlem"}</span>
               <input
                 type="number"
                 step="any"
@@ -300,7 +346,7 @@ export function AdminStations() {
             </div>
 
             <div className="space-y-2">
-              <span className="text-[9px] text-slate-500 uppercase tracking-widest block font-bold">Longitude</span>
+              <span className="text-[9px] text-slate-500 uppercase tracking-widest block font-bold">{language === "en" ? "Longitude" : "Boylam"}</span>
               <input
                 type="number"
                 step="any"
@@ -312,7 +358,7 @@ export function AdminStations() {
             </div>
 
             <div className="space-y-2">
-              <span className="text-[9px] text-slate-500 uppercase tracking-widest block font-bold">Status</span>
+              <span className="text-[9px] text-slate-500 uppercase tracking-widest block font-bold">{language === "en" ? "Status" : "Durum"}</span>
               <select
                 value={status}
                 onChange={(e) => setStatus(e.target.value as "active" | "maintenance")}
@@ -324,27 +370,27 @@ export function AdminStations() {
             </div>
 
             <div className="space-y-2">
-              <span className="text-[9px] text-slate-500 uppercase tracking-widest block font-bold">Charger Type</span>
+              <span className="text-[9px] text-slate-500 uppercase tracking-widest block font-bold">{language === "en" ? "Charger Type" : "Şarj Cihazı Tipi"}</span>
               <select
                 value={type}
                 onChange={(e) => setType(e.target.value as Station["type"])}
                 className="w-full rounded-xl border border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-black/40 px-4 py-2.5 text-slate-800 dark:text-slate-200 outline-none focus:border-accent"
               >
-                <option value="DC" className="bg-white dark:bg-[#0a0f18] text-slate-800 dark:text-slate-200">DC (Fast Charging)</option>
-                <option value="AC" className="bg-white dark:bg-[#0a0f18] text-slate-800 dark:text-slate-200">AC (Slow/Standard)</option>
+                <option value="DC" className="bg-white dark:bg-[#0a0f18] text-slate-800 dark:text-slate-200">{language === "en" ? "DC (Fast Charging)" : "DC (Hızlı Şarj)"}</option>
+                <option value="AC" className="bg-white dark:bg-[#0a0f18] text-slate-800 dark:text-slate-200">{language === "en" ? "AC (Slow/Standard)" : "AC (Yavaş/Standart)"}</option>
               </select>
             </div>
 
             <div className="space-y-2">
-              <span className="text-[9px] text-slate-500 uppercase tracking-widest block font-bold">Connector Standard</span>
+              <span className="text-[9px] text-slate-500 uppercase tracking-widest block font-bold">{language === "en" ? "Connector Standard" : "Konnektör Standardı"}</span>
               <select
                 value={connector}
                 onChange={(e) => setConnector(e.target.value as Station["connector"])}
                 className="w-full rounded-xl border border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-black/40 px-4 py-2.5 text-slate-800 dark:text-slate-200 outline-none focus:border-accent"
               >
-                <option value="CCS2" className="bg-white dark:bg-[#0a0f18] text-slate-800 dark:text-slate-200">CCS2 (Standard DC)</option>
-                <option value="Type 2" className="bg-white dark:bg-[#0a0f18] text-slate-800 dark:text-slate-200">Type 2 (Standard AC)</option>
-                <option value="NACS" className="bg-white dark:bg-[#0a0f18] text-slate-800 dark:text-slate-200">NACS (Tesla Global)</option>
+                <option value="CCS2" className="bg-white dark:bg-[#0a0f18] text-slate-800 dark:text-slate-200">{language === "en" ? "CCS2 (Standard DC)" : "CCS2 (Standart DC)"}</option>
+                <option value="Type 2" className="bg-white dark:bg-[#0a0f18] text-slate-800 dark:text-slate-200">{language === "en" ? "Type 2 (Standard AC)" : "Type 2 (Standart AC)"}</option>
+                <option value="NACS" className="bg-white dark:bg-[#0a0f18] text-slate-800 dark:text-slate-200">{language === "en" ? "NACS (Tesla Global)" : "NACS (Tesla Global)"}</option>
               </select>
             </div>
 
@@ -403,6 +449,7 @@ export function AdminStations() {
               <tr>
                 <th className="px-6 py-4">{language === "en" ? "Station ID" : "İstasyon Kodu"}</th>
                 <th className="px-6 py-4">{language === "en" ? "Location Name" : "Konum Adı"}</th>
+                <th className="px-6 py-4">{language === "en" ? "Network" : "Şebeke"}</th>
                 <th className="px-6 py-4">{language === "en" ? "Charging Speed" : "Şarj Hızı"}</th>
                 <th className="px-6 py-4">{language === "en" ? "Type/Plug" : "Tip/Soket"}</th>
                 <th className="px-6 py-4">{language === "en" ? "Available Ports" : "Kullanılabilir Soket"}</th>
@@ -425,6 +472,7 @@ export function AdminStations() {
                   <tr key={s.id} className="hover:bg-slate-55 dark:hover:bg-white/[0.01] transition duration-200">
                     <td className="px-6 py-4 font-semibold text-slate-400 dark:text-slate-500">{s.id}</td>
                     <td className="px-6 py-4 font-sans font-semibold text-slate-800 dark:text-slate-200 uppercase tracking-wider text-xs">{s.name}</td>
+                    <td className="px-6 py-4 font-sans text-slate-650 dark:text-slate-350">{s.network || "EVALIS"}</td>
                     <td className="px-6 py-4 text-accent font-semibold">⚡ {s.power}</td>
                     <td className="px-6 py-4 font-sans font-semibold text-slate-650 dark:text-slate-350 text-xs">
                       {s.type || "DC"} ({s.connector || "CCS2"})
@@ -450,7 +498,7 @@ export function AdminStations() {
                           ? "bg-accent/10 border border-accent/20 text-accent"
                           : "bg-red-500/10 border border-red-500/20 text-red-400"
                       }`}>
-                        {isActive ? (language === "en" ? "active" : "aktif") : (language === "en" ? "bakımda" : "bakımda")}
+                        {isActive ? (language === "en" ? "Active" : "Aktif") : (language === "en" ? "Maintenance" : "Bakımda")}
                       </span>
                     </td>
                     <td className="px-6 py-4 text-right font-sans">

@@ -64,13 +64,13 @@
     "nav": {
       "overview": "Overview",
       "vehicles": "My Vehicles",
-      "charging": "Charging Control",
-      "stations": "Stations Map",
+      "charging": "Charging",
       "history": "Session History",
       "schedules": "Schedules",
       "energy": "Energy",
       "notifications": "Notifications",
       "rewards": "Rewards",
+      "support": "Support",
       "settings": "Settings",
       "backToSite": "Back to Main Site"
     },

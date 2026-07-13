@@ -3,10 +3,204 @@ import { Link } from "react-router-dom";
 import { useLanguage } from "@/i18n/LanguageContext";
 import vehiclesData from "@/data/vehicles.json";
 import { Vehicle } from "@/types";
+import { vehicleType, vehicleTagline, vehicleDescription } from "@/data/vehicleTranslations";
 
 interface VehicleDetailViewProps {
   vehicleId: string;
 }
+
+type Bilingual = { en: string; tr: string };
+type Highlight = { title: Bilingual; desc: Bilingual };
+
+const overviewHeadlines: Record<string, Bilingual> = {
+  vector: { en: "Designed to move you.", tr: "Sizi harekete geçirmek için tasarlandı." },
+  cloud: { en: "Space for every moment.", tr: "Her an için geniş alan." },
+  bullet: { en: "Built for the city. Born to ride.", tr: "Şehir için inşa edildi. Sürmek için doğdu." }
+};
+
+const designContent: Record<string, { paragraph: Bilingual; highlights: Highlight[] }> = {
+  vector: {
+    paragraph: {
+      en: "Vector's sculpted silhouette is crafted with absolute aerodynamic precision. With a drag coefficient of 0.208 Cd, air slips around the body effortlessly, maximizing electric range.",
+      tr: "Vector'ın yontulmuş silüeti, mutlak aerodinamik hassasiyetle şekillendirilmiştir. 0.208 Cd'lik sürükleme katsayısı sayesinde hava, gövdenin etrafından zahmetsizce akarak elektrikli menzili en üst düzeye çıkarır."
+    },
+    highlights: [
+      {
+        title: { en: "Premium Sound Acoustics", tr: "Premium Ses Akustiği" },
+        desc: {
+          en: "23-speaker custom surround audio system delivers pure acoustic immersion throughout the cabin.",
+          tr: "23 hoparlörlü özel surround ses sistemi, kabin genelinde saf akustik deneyim sunar."
+        }
+      }
+    ]
+  },
+  cloud: {
+    paragraph: {
+      en: "Cloud SUV redefines space. Features an ultra-wide panoramic ceiling canopy that captures and reflects natural light, framing your journeys beautifully.",
+      tr: "Cloud SUV, alan kavramını yeniden tanımlıyor. Doğal ışığı yakalayıp yansıtan ultra geniş panoramik tavan camı, yolculuklarınızı güzelce çerçeveliyor."
+    },
+    highlights: [
+      {
+        title: { en: "Panoramic Ceiling Vista", tr: "Panoramik Tavan Manzarası" },
+        desc: {
+          en: "A massive UV-insulated glass canopy wraps the ceiling, creating an open air greenhouse aesthetic.",
+          tr: "UV yalıtımlı devasa bir cam tavan, açık hava serası estetiği yaratır."
+        }
+      },
+      {
+        title: { en: "Large Cargo Bay", tr: "Geniş Bagaj Alanı" },
+        desc: {
+          en: "Unlock up to 2,100 Liters of versatile utility space with flat-folding seat layouts.",
+          tr: "Düz katlanabilir koltuk düzenleriyle 2.100 Litreye kadar çok amaçlı kullanım alanı."
+        }
+      }
+    ]
+  },
+  bullet: {
+    paragraph: {
+      en: "Bullet motorcycle boasts a minimalist cybernetic structure built with aircraft-grade aluminum. Its aggressive stance lowers the center of gravity for maximum handling cornering.",
+      tr: "Bullet motosiklet, uçak sınıfı alüminyumdan inşa edilmiş minimalist sibernetik bir yapıya sahiptir. Agresif duruşu, maksimum viraj hakimiyeti için ağırlık merkezini alçaltır."
+    },
+    highlights: [
+      {
+        title: { en: "Portable Urban Charging", tr: "Taşınabilir Şehir Şarjı" },
+        desc: {
+          en: "Removable lightweight battery system enables charging inside your home or office on any standard outlet.",
+          tr: "Çıkarılabilir hafif batarya sistemi, evinizde veya ofisinizde herhangi bir standart prizle şarj imkânı sunar."
+        }
+      }
+    ]
+  }
+};
+
+const performanceContent: Record<string, { paragraph: Bilingual; highlights: Highlight[] }> = {
+  vector: {
+    paragraph: {
+      en: "Equipped with dual electric motors delivering a combined 350 kW of peak power, Vector rockets to 100 km/h in 3.8 seconds. Features intelligent active roll stabilization.",
+      tr: "Toplamda 350 kW tepe güç sunan çift elektrikli motorla donatılan Vector, 100 km/s hıza 3.8 saniyede ulaşır. Akıllı aktif yalpa stabilizasyonuna sahiptir."
+    },
+    highlights: [
+      {
+        title: { en: "800V Ultra-Fast Charging Architecture", tr: "800V Ultra Hızlı Şarj Mimarisi" },
+        desc: {
+          en: "Charges from 10% to 80% capacity in just 18 minutes on high-speed DC Supercharger stations.",
+          tr: "Yüksek hızlı DC Supercharger istasyonlarında sadece 18 dakikada %10'dan %80 kapasiteye şarj olur."
+        }
+      }
+    ]
+  },
+  cloud: {
+    paragraph: {
+      en: "Cloud's intelligent All-Wheel Drive matches instant torque demands to all conditions. Standard high-efficiency dual electric motors deliver 315 kW capacity.",
+      tr: "Cloud'un akıllı Dört Tekerlekten Çekiş sistemi, ani tork taleplerini tüm koşullara uyarlar. Standart yüksek verimli çift elektrikli motor, 315 kW kapasite sunar."
+    },
+    highlights: [
+      {
+        title: { en: "Dynamic All-Wheel Drive", tr: "Dinamik Dört Tekerlekten Çekiş" },
+        desc: {
+          en: "Torque is redistributed to individual axles in 10 milliseconds, enhancing traction under rain or snow.",
+          tr: "Tork, yağmur veya kar altında tutuşu artırmak için 10 milisaniyede tekerleklere yeniden dağıtılır."
+        }
+      },
+      {
+        title: { en: "Intelligent Heat Pump System", tr: "Akıllı Isı Pompası Sistemi" },
+        desc: {
+          en: "Optimizes battery thermal efficiency in sub-zero climates, recovering up to 15% range loss.",
+          tr: "Sıfırın altındaki iklimlerde batarya termal verimliliğini optimize ederek %15'e varan menzil kaybını telafi eder."
+        }
+      }
+    ]
+  },
+  bullet: {
+    paragraph: {
+      en: "Bullet motorcycle pushes direct belt-driven acceleration, bringing instant electric torque directly to the pavement. High torque response lets you dominate traffic.",
+      tr: "Bullet motosiklet, doğrudan kayışla tahrikli ivmelenmeyle anlık elektrikli torku doğrudan asfalta aktarır. Yüksek tork tepkisiyle trafiğe hakim olun."
+    },
+    highlights: [
+      {
+        title: { en: "Instant Acceleration", tr: "Anlık İvmelenme" },
+        desc: {
+          en: "Launches from 0 to 60 km/h in an adrenaline-filled 2.7 seconds.",
+          tr: "0'dan 60 km/s hıza adrenalin dolu 2.7 saniyede ulaşır."
+        }
+      },
+      {
+        title: { en: "Regenerative Braking Feedback", tr: "Rejeneratif Fren Geri Beslemesi" },
+        desc: {
+          en: "Intelligent kinetic recovery feeds energy back to the battery pack while braking.",
+          tr: "Akıllı kinetik geri kazanım, frenleme sırasında enerjiyi batarya paketine geri besler."
+        }
+      }
+    ]
+  }
+};
+
+const technologyIntro: Bilingual = {
+  en: "Powered by our proprietary EVOS platform, EVALIS vehicles run intelligent trip routing, integrated music ecosystem, custom navigation overlays, and over-the-air firmware updates.",
+  tr: "Kendi geliştirdiğimiz EVOS platformuyla çalışan EVALIS araçları; akıllı yolculuk rotalama, entegre müzik ekosistemi, özel navigasyon katmanları ve kablosuz (OTA) yazılım güncellemeleri sunar."
+};
+
+const technologyHighlights: Record<string, Highlight> = {
+  vector: {
+    title: { en: `15.6" Center Command Console`, tr: `15.6" Merkezi Komuta Konsolu` },
+    desc: {
+      en: "Stunning UHD central display equipped with AI voice assistance, off-peak charging schedules, and ambient climate rules.",
+      tr: "Yapay zeka destekli sesli asistan, düşük tarife şarj programları ve ortam iklim kurallarıyla donatılmış etkileyici UHD merkezi ekran."
+    }
+  },
+  cloud: {
+    title: { en: "Intelligent Cockpit OS", tr: "Akıllı Kokpit İşletim Sistemi" },
+    desc: {
+      en: "Front dashboard screen combined with wireless passenger casting and intelligent supercharging map layouts.",
+      tr: "Kablosuz yolcu yayını ve akıllı süper şarj harita düzenleriyle birleşen ön gösterge paneli ekranı."
+    }
+  },
+  bullet: {
+    title: { en: "TFT Display Cockpit", tr: "TFT Ekranlı Kokpit" },
+    desc: {
+      en: "High-definition TFT dashboard with integrated rider profiles, route telemetry, and custom throttle modes.",
+      tr: "Entegre sürücü profilleri, rota telemetrisi ve özel gaz modlarına sahip yüksek çözünürlüklü TFT gösterge paneli."
+    }
+  }
+};
+
+const safetyIntro: Bilingual = {
+  en: "EVALIS structures are engineered to exceed worldwide safety testing standards. Features active steel cages, bottom armor plates protecting battery grids, and dynamic passenger protection.",
+  tr: "EVALIS yapıları, dünya genelindeki güvenlik test standartlarını aşacak şekilde tasarlanmıştır. Aktif çelik kafesler, batarya gruplarını koruyan alt zırh plakaları ve dinamik yolcu koruması içerir."
+};
+
+const safetyHighlights: Record<string, Highlight> = {
+  vector: {
+    title: { en: "L2+ Autopilot Driver Assist", tr: "L2+ Otopilot Sürücü Asistanı" },
+    desc: {
+      en: "EVALIS Guard pilot leverages 12 ultrasonic cameras for automatic blind-spot prevention, lane alignment, and cruise assistance.",
+      tr: "EVALIS Guard pilot, otomatik kör nokta önleme, şerit hizalama ve hız sabitleme desteği için 12 ultrasonik kamera kullanır."
+    }
+  },
+  cloud: {
+    title: { en: "5-Star Safety Cage Structure", tr: "5 Yıldızlı Güvenlik Kafesi Yapısı" },
+    desc: {
+      en: "Chassis built with ultra-high strength boron steel, providing superior cabin crash protection and rollover shield.",
+      tr: "Ultra yüksek mukavemetli bor çelikten inşa edilen şasi, üstün kabin çarpışma koruması ve devrilme kalkanı sağlar."
+    }
+  },
+  bullet: {
+    title: { en: "Dual-Channel Hydraulic ABS", tr: "Çift Kanallı Hidrolik ABS" },
+    desc: {
+      en: "Advanced anti-lock braking controls front/rear wheel torque on wet asphalt to prevent skid conditions.",
+      tr: "Gelişmiş kilitlenme önleyici fren sistemi, ıslak asfaltta kayma durumlarını önlemek için ön/arka tekerlek torkunu kontrol eder."
+    }
+  }
+};
+
+const tabLabels: Record<string, Bilingual> = {
+  overview: { en: "Overview", tr: "Genel Bakış" },
+  design: { en: "Design", tr: "Tasarım" },
+  performance: { en: "Performance", tr: "Performans" },
+  technology: { en: "Technology", tr: "Teknoloji" },
+  safety: { en: "Safety", tr: "Güvenlik" },
+  specs: { en: "Specs", tr: "Özellikler" }
+};
 
 export function VehicleDetailView({ vehicleId }: VehicleDetailViewProps) {
   const { t, language } = useLanguage();
@@ -18,9 +212,9 @@ export function VehicleDetailView({ vehicleId }: VehicleDetailViewProps) {
   if (!vehicle) {
     return (
       <div className="text-center py-20">
-        <h2 className="text-2xl font-light text-white">Vehicle Not Found</h2>
+        <h2 className="text-2xl font-light text-white">{language === "en" ? "Vehicle Not Found" : "Araç Bulunamadı"}</h2>
         <Link to="/vehicles" className="text-accent hover:underline mt-4 inline-block">
-          Back to lineup
+          {language === "en" ? "Back to lineup" : "Modellere Dön"}
         </Link>
       </div>
     );
@@ -63,12 +257,10 @@ export function VehicleDetailView({ vehicleId }: VehicleDetailViewProps) {
               {language === "en" ? "Overview" : "Genel Bakış"}
             </span>
             <h2 className="text-3xl font-light tracking-wide uppercase text-white leading-snug">
-              {vehicle.id === "vector" && "Designed to move you."}
-              {vehicle.id === "cloud" && "Space for every moment."}
-              {vehicle.id === "bullet" && "Built for the city. Born to ride."}
+              {overviewHeadlines[vehicle.id]?.[language] || ""}
             </h2>
             <p className="text-slate-300 font-light text-sm leading-relaxed">
-              {vehicle.description} {language === "en" ? "Experience luxury electric transport engineered to push borders and refine expectations." : "Sınırları zorlamak ve beklentileri yeniden tanımlamak için tasarlanmış lüks elektrikli ulaşımı deneyimleyin."}
+              {vehicleDescription(vehicle.id, vehicle.description, language)} {language === "en" ? "Experience luxury electric transport engineered to push borders and refine expectations." : "Sınırları zorlamak ve beklentileri yeniden tanımlamak için tasarlanmış lüks elektrikli ulaşımı deneyimleyin."}
             </p>
             <div className="pt-2">
               <Link
@@ -91,49 +283,20 @@ export function VehicleDetailView({ vehicleId }: VehicleDetailViewProps) {
                 {language === "en" ? "Form Meets Pure Utility" : "Form Saf İşlevsellikle Buluşuyor"}
               </h2>
               <p className="text-slate-355 font-light text-sm leading-relaxed">
-                {vehicle.id === "vector" && "Vector's sculpted silhouette is crafted with absolute aerodynamic precision. With a drag coefficient of 0.208 Cd, air slips around the body effortlessly, maximizing electric range."}
-                {vehicle.id === "cloud" && "Cloud SUV redefines space. Features an ultra-wide panoramic ceiling canopy that captures and reflects natural light, framing your journeys beautifully."}
-                {vehicle.id === "bullet" && "Bullet motorcycle boasts a minimalist cybernetic structure built with aircraft-grade aluminum. Its aggressive stance lowers the center of gravity for maximum handling cornering."}
+                {designContent[vehicle.id]?.paragraph[language] || ""}
               </p>
-              
+
               {/* Highlight items migrated from features list */}
               <div className="space-y-4 pt-2">
-                {vehicle.id === "vector" && (
-                  <div className="flex gap-4 p-4 rounded-2xl bg-white/[0.01] border border-white/5">
+                {(designContent[vehicle.id]?.highlights || []).map((h, i) => (
+                  <div key={i} className="flex gap-4 p-4 rounded-2xl bg-white/[0.01] border border-white/5">
                     <span className="text-accent text-lg shrink-0 mt-0.5">✔</span>
                     <div>
-                      <h4 className="text-xs font-bold uppercase tracking-wider text-slate-200">Premium Sound Acoustics</h4>
-                      <p className="text-xs text-slate-400 font-light mt-0.5">23-speaker custom surround audio system delivers pure acoustic immersion throughout the cabin.</p>
+                      <h4 className="text-xs font-bold uppercase tracking-wider text-slate-200">{h.title[language]}</h4>
+                      <p className="text-xs text-slate-400 font-light mt-0.5">{h.desc[language]}</p>
                     </div>
                   </div>
-                )}
-                {vehicle.id === "cloud" && (
-                  <>
-                    <div className="flex gap-4 p-4 rounded-2xl bg-white/[0.01] border border-white/5">
-                      <span className="text-accent text-lg shrink-0 mt-0.5">✔</span>
-                      <div>
-                        <h4 className="text-xs font-bold uppercase tracking-wider text-slate-200">Panoramic Ceiling Vista</h4>
-                        <p className="text-xs text-slate-400 font-light mt-0.5">A massive UV-insulated glass canopy wraps the ceiling, creating an open air greenhouse aesthetic.</p>
-                      </div>
-                    </div>
-                    <div className="flex gap-4 p-4 rounded-2xl bg-white/[0.01] border border-white/5">
-                      <span className="text-accent text-lg shrink-0 mt-0.5">✔</span>
-                      <div>
-                        <h4 className="text-xs font-bold uppercase tracking-wider text-slate-200">Large Cargo Bay</h4>
-                        <p className="text-xs text-slate-400 font-light mt-0.5">Unlock up to 2,100 Liters of versatile utility space with flat-folding seat layouts.</p>
-                      </div>
-                    </div>
-                  </>
-                )}
-                {vehicle.id === "bullet" && (
-                  <div className="flex gap-4 p-4 rounded-2xl bg-white/[0.01] border border-white/5">
-                    <span className="text-accent text-lg shrink-0 mt-0.5">✔</span>
-                    <div>
-                      <h4 className="text-xs font-bold uppercase tracking-wider text-slate-200">Portable Urban Charging</h4>
-                      <p className="text-xs text-slate-400 font-light mt-0.5">Removable lightweight battery system enables charging inside your home or office on any standard outlet.</p>
-                    </div>
-                  </div>
-                )}
+                ))}
               </div>
           </div>
         );
@@ -148,58 +311,20 @@ export function VehicleDetailView({ vehicleId }: VehicleDetailViewProps) {
                 {language === "en" ? "Unmatched Torque & Output" : "Eşsiz Tork ve Güç"}
               </h2>
               <p className="text-slate-355 font-light text-sm leading-relaxed">
-                {vehicle.id === "vector" && "Equipped with dual electric motors delivering a combined 350 kW of peak power, Vector rockets to 100 km/h in 3.8 seconds. Features intelligent active roll stabilization."}
-                {vehicle.id === "cloud" && "Cloud's intelligent All-Wheel Drive matches instant torque demands to all conditions. Standard high-efficiency dual electric motors deliver 315 kW capacity."}
-                {vehicle.id === "bullet" && "Bullet motorcycle pushes direct belt-driven acceleration, bringing instant electric torque directly to the pavement. High torque response lets you dominate traffic."}
+                {performanceContent[vehicle.id]?.paragraph[language] || ""}
               </p>
 
               {/* Performance highlights migrated from features list */}
               <div className="space-y-4 pt-2">
-                {vehicle.id === "vector" && (
-                  <div className="flex gap-4 p-4 rounded-2xl bg-white/[0.01] border border-white/5">
+                {(performanceContent[vehicle.id]?.highlights || []).map((h, i) => (
+                  <div key={i} className="flex gap-4 p-4 rounded-2xl bg-white/[0.01] border border-white/5">
                     <span className="text-accent text-lg shrink-0 mt-0.5">✔</span>
                     <div>
-                      <h4 className="text-xs font-bold uppercase tracking-wider text-slate-200">800V Ultra-Fast Charging Architecture</h4>
-                      <p className="text-xs text-slate-400 font-light mt-0.5">Charges from 10% to 80% capacity in just 18 minutes on high-speed DC Supercharger stations.</p>
+                      <h4 className="text-xs font-bold uppercase tracking-wider text-slate-200">{h.title[language]}</h4>
+                      <p className="text-xs text-slate-400 font-light mt-0.5">{h.desc[language]}</p>
                     </div>
                   </div>
-                )}
-                {vehicle.id === "cloud" && (
-                  <>
-                    <div className="flex gap-4 p-4 rounded-2xl bg-white/[0.01] border border-white/5">
-                      <span className="text-accent text-lg shrink-0 mt-0.5">✔</span>
-                      <div>
-                        <h4 className="text-xs font-bold uppercase tracking-wider text-slate-200">Dynamic All-Wheel Drive</h4>
-                        <p className="text-xs text-slate-400 font-light mt-0.5">Torque is redistributed to individual axles in 10 milliseconds, enhancing traction under rain or snow.</p>
-                      </div>
-                    </div>
-                    <div className="flex gap-4 p-4 rounded-2xl bg-white/[0.01] border border-white/5">
-                      <span className="text-accent text-lg shrink-0 mt-0.5">✔</span>
-                      <div>
-                        <h4 className="text-xs font-bold uppercase tracking-wider text-slate-200">Intelligent Heat Pump System</h4>
-                        <p className="text-xs text-slate-400 font-light mt-0.5">Optimizes battery thermal efficiency in sub-zero climates, recovering up to 15% range loss.</p>
-                      </div>
-                    </div>
-                  </>
-                )}
-                {vehicle.id === "bullet" && (
-                  <>
-                    <div className="flex gap-4 p-4 rounded-2xl bg-white/[0.01] border border-white/5">
-                      <span className="text-accent text-lg shrink-0 mt-0.5">✔</span>
-                      <div>
-                        <h4 className="text-xs font-bold uppercase tracking-wider text-slate-200">Instant Acceleration</h4>
-                        <p className="text-xs text-slate-400 font-light mt-0.5">Launches from 0 to 60 km/h in an adrenaline-filled 2.7 seconds.</p>
-                      </div>
-                    </div>
-                    <div className="flex gap-4 p-4 rounded-2xl bg-white/[0.01] border border-white/5">
-                      <span className="text-accent text-lg shrink-0 mt-0.5">✔</span>
-                      <div>
-                        <h4 className="text-xs font-bold uppercase tracking-wider text-slate-200">Regenerative Braking Feedback</h4>
-                        <p className="text-xs text-slate-400 font-light mt-0.5">Intelligent kinetic recovery feeds energy back to the battery pack while braking.</p>
-                      </div>
-                    </div>
-                  </>
-                )}
+                ))}
               </div>
           </div>
         );
@@ -214,35 +339,17 @@ export function VehicleDetailView({ vehicleId }: VehicleDetailViewProps) {
                 {language === "en" ? "Digital Cockpit Interface" : "Dijital Kokpit Arayüzü"}
               </h2>
               <p className="text-slate-355 font-light text-sm leading-relaxed">
-                Powered by our proprietary EVOS platform, EVALIS vehicles run intelligent trip routing, integrated music ecosystem, custom navigation overlays, and over-the-air firmware updates.
+                {technologyIntro[language]}
               </p>
 
               {/* Technology highlights migrated from features list */}
               <div className="space-y-4 pt-2">
-                {vehicle.id === "vector" && (
+                {technologyHighlights[vehicle.id] && (
                   <div className="flex gap-4 p-4 rounded-2xl bg-white/[0.01] border border-white/5">
                     <span className="text-accent text-lg shrink-0 mt-0.5">✔</span>
                     <div>
-                      <h4 className="text-xs font-bold uppercase tracking-wider text-slate-200">15.6" Center Command Console</h4>
-                      <p className="text-xs text-slate-400 font-light mt-0.5">Stunning UHD central display equipped with AI voice assistance, off-peak charging schedules, and ambient climate rules.</p>
-                    </div>
-                  </div>
-                )}
-                {vehicle.id === "cloud" && (
-                  <div className="flex gap-4 p-4 rounded-2xl bg-white/[0.01] border border-white/5">
-                    <span className="text-accent text-lg shrink-0 mt-0.5">✔</span>
-                    <div>
-                      <h4 className="text-xs font-bold uppercase tracking-wider text-slate-200">Intelligent Cockpit OS</h4>
-                      <p className="text-xs text-slate-400 font-light mt-0.5">Front dashboard screen combined with wireless passenger casting and intelligent supercharging map layouts.</p>
-                    </div>
-                  </div>
-                )}
-                {vehicle.id === "bullet" && (
-                  <div className="flex gap-4 p-4 rounded-2xl bg-white/[0.01] border border-white/5">
-                    <span className="text-accent text-lg shrink-0 mt-0.5">✔</span>
-                    <div>
-                      <h4 className="text-xs font-bold uppercase tracking-wider text-slate-200">TFT Display Cockpit</h4>
-                      <p className="text-xs text-slate-400 font-light mt-0.5">High-definition TFT dashboard with integrated rider profiles, route telemetry, and custom throttle modes.</p>
+                      <h4 className="text-xs font-bold uppercase tracking-wider text-slate-200">{technologyHighlights[vehicle.id].title[language]}</h4>
+                      <p className="text-xs text-slate-400 font-light mt-0.5">{technologyHighlights[vehicle.id].desc[language]}</p>
                     </div>
                   </div>
                 )}
@@ -260,35 +367,17 @@ export function VehicleDetailView({ vehicleId }: VehicleDetailViewProps) {
                 {language === "en" ? "Fortified Protection" : "Güçlendirilmiş Koruma"}
               </h2>
               <p className="text-slate-350 font-light text-sm leading-relaxed">
-                EVALIS structures are engineered to exceed worldwide safety testing standards. Features active steel cages, bottom armor plates protecting battery grids, and dynamic passenger protection.
+                {safetyIntro[language]}
               </p>
 
               {/* Safety highlights migrated from features list */}
               <div className="space-y-4 pt-2">
-                {vehicle.id === "vector" && (
+                {safetyHighlights[vehicle.id] && (
                   <div className="flex gap-4 p-4 rounded-2xl bg-white/[0.01] border border-white/5">
                     <span className="text-accent text-lg shrink-0 mt-0.5">✔</span>
                     <div>
-                      <h4 className="text-xs font-bold uppercase tracking-wider text-slate-200">L2+ Autopilot Driver Assist</h4>
-                      <p className="text-xs text-slate-400 font-light mt-0.5">EVALIS Guard pilot leverages 12 ultrasonic cameras for automatic blind-spot prevention, lane alignment, and cruise assistance.</p>
-                    </div>
-                  </div>
-                )}
-                {vehicle.id === "cloud" && (
-                  <div className="flex gap-4 p-4 rounded-2xl bg-white/[0.01] border border-white/5">
-                    <span className="text-accent text-lg shrink-0 mt-0.5">✔</span>
-                    <div>
-                      <h4 className="text-xs font-bold uppercase tracking-wider text-slate-200">5-Star Safety Cage Structure</h4>
-                      <p className="text-xs text-slate-400 font-light mt-0.5">Chassis built with ultra-high strength boron steel, providing superior cabin crash protection and rollover shield.</p>
-                    </div>
-                  </div>
-                )}
-                {vehicle.id === "bullet" && (
-                  <div className="flex gap-4 p-4 rounded-2xl bg-white/[0.01] border border-white/5">
-                    <span className="text-accent text-lg shrink-0 mt-0.5">✔</span>
-                    <div>
-                      <h4 className="text-xs font-bold uppercase tracking-wider text-slate-200">Dual-Channel Hydraulic ABS</h4>
-                      <p className="text-xs text-slate-400 font-light mt-0.5">Advanced anti-lock braking controls front/rear wheel torque on wet asphalt to prevent skid conditions.</p>
+                      <h4 className="text-xs font-bold uppercase tracking-wider text-slate-200">{safetyHighlights[vehicle.id].title[language]}</h4>
+                      <p className="text-xs text-slate-400 font-light mt-0.5">{safetyHighlights[vehicle.id].desc[language]}</p>
                     </div>
                   </div>
                 )}
@@ -364,14 +453,14 @@ export function VehicleDetailView({ vehicleId }: VehicleDetailViewProps) {
             {vehicle.name}
           </h1>
           <p className="text-slate-300 font-light text-xs tracking-widest mt-1">
-            {vehicle.type}
+            {vehicleType(vehicle.id, vehicle.type, language)}
           </p>
         </div>
 
         {/* Tagline and Actions */}
         <div className="relative z-10 max-w-7xl mx-auto w-full mb-8 flex flex-col md:flex-row justify-between items-start md:items-end gap-6 px-6">
           <p className="max-w-xl text-md md:text-lg font-light text-slate-200 tracking-wide leading-relaxed">
-            {vehicle.tagline}
+            {vehicleTagline(vehicle.id, vehicle.tagline, language)}
           </p>
           <div className="flex gap-4 w-full md:w-auto">
             <Link
@@ -423,7 +512,7 @@ export function VehicleDetailView({ vehicleId }: VehicleDetailViewProps) {
                         : "border-transparent text-slate-400 hover:text-white"
                     }`}
                   >
-                    {tab}
+                    {tabLabels[tab]?.[language] || tab}
                   </button>
                 ))}
               </div>

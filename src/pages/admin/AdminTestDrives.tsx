@@ -94,7 +94,11 @@ export function AdminTestDrives() {
                             ? "bg-accent/10 border border-accent/20 text-accent"
                             : "bg-blue-500/10 border border-blue-500/20 text-blue-400"
                         }`}>
-                          {td.status}
+                          {td.status === "pending"
+                            ? (language === "en" ? "Pending" : "Beklemede")
+                            : td.status === "confirmed"
+                              ? (language === "en" ? "Confirmed" : "Onaylandı")
+                              : (language === "en" ? "Completed" : "Tamamlandı")}
                         </span>
                       </td>
                       <td className="px-6 py-4 text-right font-sans">

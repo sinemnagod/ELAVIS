@@ -3,9 +3,11 @@ import { useLanguage } from "@/i18n/LanguageContext";
 import { useAuth } from "@/context/AuthContext";
 import { useToast } from "@/context/ToastContext";
 import { readStorage, writeStorage, storageKeys } from "@/lib/storage";
+import { formatPhoneInput } from "@/lib/phone";
 import vehiclesData from "@/data/vehicles.json";
 import productsData from "@/data/products.json";
 import { Order, TestDrive, User, Vehicle } from "@/types";
+import { vehicleType } from "@/data/vehicleTranslations";
 import { Link, useNavigate } from "react-router-dom";
 
 export function Profile() {
@@ -32,7 +34,7 @@ export function Profile() {
       <div className="space-y-8 pt-28 pb-10 max-w-7xl mx-auto px-6">
         <div className="text-center max-w-3xl mx-auto space-y-4">
           <span className="text-xs uppercase tracking-[0.3em] text-accent font-semibold block">
-            ACCESS RESTRICTED
+            {language === "en" ? "ACCESS RESTRICTED" : "ERİŞİM KISITLI"}
           </span>
           <h1 className="text-4xl font-extralight tracking-widest uppercase text-white">
             {t("nav.profile")}
@@ -124,6 +126,21 @@ export function Profile() {
     }
   };
 
+  const testDriveStatusLabel = (status: TestDrive["status"]) => {
+    if (language === "tr") {
+      switch (status) {
+        case "pending": return "Beklemede";
+        case "confirmed": return "Onaylandı";
+        case "completed": return "Tamamlandı";
+      }
+    }
+    switch (status) {
+      case "pending": return "Pending";
+      case "confirmed": return "Confirmed";
+      case "completed": return "Completed";
+    }
+  };
+
   const orderStatusStyle = (status: Order["status"]) => {
     switch (status) {
       case "delivered": return "bg-emerald-500/10 border border-emerald-500/20 text-emerald-400";
@@ -206,8 +223,9 @@ export function Profile() {
                 </span>
                 <input
                   type="tel"
+                  inputMode="tel"
                   value={editPhone}
-                  onChange={(e) => setEditPhone(e.target.value)}
+                  onChange={(e) => setEditPhone(formatPhoneInput(e.target.value))}
                   className="w-full rounded-xl border border-white/10 bg-black/40 px-4 py-3 text-sm text-slate-200 outline-none focus:border-accent transition"
                   required
                 />
@@ -259,7 +277,7 @@ export function Profile() {
                 {user.name}
               </h1>
               <span className="text-[9px] font-bold tracking-widest bg-accent text-black px-2 py-0.5 rounded-md uppercase">
-                {user.role}
+                {user.role === "admin" ? (language === "en" ? "Admin" : "Yönetici") : (language === "en" ? "Customer" : "Müşteri")}
               </span>
             </div>
             <p className="text-xs text-slate-400 font-light">{user.email}</p>
@@ -319,7 +337,7 @@ export function Profile() {
                   </div>
                   <div className="p-4">
                     <span className="text-[9px] text-accent uppercase tracking-widest block font-medium">
-                      {vehicle.type}
+                      {vehicleType(vehicle.id, vehicle.type, language)}
                     </span>
                     <h4 className="text-sm font-light uppercase tracking-wider text-slate-200 mt-1">
                       {vehicle.name}
@@ -362,7 +380,10 @@ export function Profile() {
 
                     <div className="flex items-center gap-3 w-full sm:w-auto justify-between sm:justify-end">
                       <span className="text-accent font-semibold text-sm">
-                        {order.currency} {order.subtotal.toLocaleString()}
+                        {formatPrice(
+                          order.currency === "$" ? order.subtotal : order.subtotal / 34,
+                          order.currency === "₺" ? order.subtotal : order.subtotal * 34
+                        )}
                       </span>
                       <span className={`px-3 py-1 rounded-full text-[9px] font-bold tracking-widest uppercase ${orderStatusStyle(order.status)}`}>
                         {orderStatusLabel(order.status)}
@@ -415,7 +436,7 @@ export function Profile() {
 
                       <div className="flex items-center gap-3 w-full sm:w-auto justify-between sm:justify-end">
                         <span className="px-3 py-1 rounded-full text-[9px] font-bold tracking-widest bg-accent/10 border border-accent/20 text-accent uppercase">
-                          {drive.status}
+                          {testDriveStatusLabel(drive.status)}
                         </span>
                         {drive.status !== "completed" && (
                           <button

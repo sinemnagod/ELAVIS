@@ -1,3 +1,5 @@
+import { useLanguage } from "@/i18n/LanguageContext";
+
 interface VehicleTopViewProps {
   vehicleId: string;
   isCharging: boolean;
@@ -30,9 +32,10 @@ function ChargePortBadge({ isCharging, style }: { isCharging: boolean; style: Re
 }
 
 export function VehicleTopView({ vehicleId, isCharging, className = "" }: VehicleTopViewProps) {
+  const { language } = useLanguage();
   const isMotorcycle = vehicleId === "bullet";
   const src = isMotorcycle ? "/images/vehicles/motorcycle-top.png" : "/images/vehicles/car-top.png";
-  const alt = isMotorcycle ? "Bullet" : "Vehicle";
+  const alt = isMotorcycle ? "Bullet" : (language === "en" ? "Vehicle" : "Araç");
 
   // Rough charge-port position over the artwork: front-center for the car,
   // over the tank cap already drawn on the motorcycle

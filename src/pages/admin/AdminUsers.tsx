@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { readStorage, writeStorage, storageKeys } from "@/lib/storage";
+import { formatPhoneInput } from "@/lib/phone";
 import usersData from "@/data/users.json";
 import vehiclesData from "@/data/vehicles.json";
 import { User, Vehicle } from "@/types";
@@ -164,6 +165,101 @@ export function AdminUsers() {
         </button>
       </div>
 
+      {/* Create / Edit user form */}
+      {isFormOpen && (
+        <div className="dash-panel p-6 space-y-6 shadow-2xl animate-fade-in border-accent/25 bg-white dark:bg-[#0e1423]">
+          <div className="flex justify-between items-center border-b border-slate-200 dark:border-white/5 pb-3">
+            <h3 className="text-xs font-bold tracking-wider text-slate-800 dark:text-white uppercase">
+              {editingUser
+                ? (language === "en" ? "Edit User" : "Kullanıcıyı Düzenle")
+                : (language === "en" ? "Add New User" : "Yeni Kullanıcı Ekle")}
+            </h3>
+            <button
+              onClick={resetForm}
+              aria-label={language === "en" ? "Close form" : "Formu kapat"}
+              className="text-slate-450 hover:text-slate-700 dark:hover:text-white text-sm cursor-pointer"
+            >
+              ✕
+            </button>
+          </div>
+
+          <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-6 text-xs font-light text-slate-700 dark:text-slate-350">
+            <div className="space-y-1">
+              <label className="text-[10px] text-slate-500 uppercase tracking-widest block font-semibold">
+                {language === "en" ? "Full Name" : "Ad Soyad"}
+              </label>
+              <input
+                type="text"
+                value={form.name}
+                onChange={(e) => setForm({ ...form, name: e.target.value })}
+                className="w-full bg-slate-50 dark:bg-black/40 border border-slate-200 dark:border-white/10 rounded-xl px-4 py-3 text-slate-800 dark:text-slate-200 outline-none"
+                required
+              />
+            </div>
+            <div className="space-y-1">
+              <label className="text-[10px] text-slate-500 uppercase tracking-widest block font-semibold">
+                {language === "en" ? "Email Address" : "E-posta Adresi"}
+              </label>
+              <input
+                type="email"
+                value={form.email}
+                onChange={(e) => setForm({ ...form, email: e.target.value })}
+                className="w-full bg-slate-50 dark:bg-black/40 border border-slate-200 dark:border-white/10 rounded-xl px-4 py-3 text-slate-800 dark:text-slate-200 outline-none"
+                required
+              />
+            </div>
+            <div className="space-y-1">
+              <label className="text-[10px] text-slate-500 uppercase tracking-widest block font-semibold">
+                {language === "en" ? "Phone Number" : "Telefon Numarası"}
+              </label>
+              <input
+                type="tel"
+                inputMode="tel"
+                value={form.phone}
+                onChange={(e) => setForm({ ...form, phone: formatPhoneInput(e.target.value) })}
+                className="w-full bg-slate-50 dark:bg-black/40 border border-slate-200 dark:border-white/10 rounded-xl px-4 py-3 text-slate-800 dark:text-slate-200 outline-none"
+                required
+              />
+            </div>
+            <div className="space-y-1">
+              <label className="text-[10px] text-slate-500 uppercase tracking-widest block font-semibold">
+                {language === "en" ? "Role" : "Rol"}
+              </label>
+              <select
+                value={form.role}
+                onChange={(e) => setForm({ ...form, role: e.target.value as User["role"] })}
+                className="w-full bg-slate-50 dark:bg-black/40 border border-slate-200 dark:border-white/10 rounded-xl px-4 py-3 text-slate-800 dark:text-slate-200 outline-none"
+              >
+                <option value="customer" className="bg-white dark:bg-[#0a0f18] text-slate-800 dark:text-slate-200">
+                  {language === "en" ? "Customer" : "Müşteri"}
+                </option>
+                <option value="admin" className="bg-white dark:bg-[#0a0f18] text-slate-800 dark:text-slate-200">
+                  {language === "en" ? "Admin" : "Yönetici"}
+                </option>
+              </select>
+            </div>
+
+            <div className="md:col-span-2 flex justify-end gap-3 pt-2 font-sans text-[10px] font-bold uppercase tracking-wider">
+              <button
+                type="button"
+                onClick={resetForm}
+                className="px-5 py-2.5 rounded-full border border-slate-200 dark:border-white/10 text-slate-650 dark:text-slate-350 hover:bg-slate-100 dark:hover:bg-white/5 transition"
+              >
+                {language === "en" ? "Cancel" : "Vazgeç"}
+              </button>
+              <button
+                type="submit"
+                className="px-6 py-2.5 rounded-full bg-accent text-black hover:bg-[#348c70] transition"
+              >
+                {editingUser
+                  ? (language === "en" ? "Save Changes" : "Değişiklikleri Kaydet")
+                  : (language === "en" ? "Add User" : "Kullanıcı Ekle")}
+              </button>
+            </div>
+          </form>
+        </div>
+      )}
+
       {/* Filters Toolbar */}
       <div className="dash-panel p-5 grid grid-cols-1 md:grid-cols-3 gap-4">
         <div className="space-y-1 md:col-span-2">
@@ -295,7 +391,7 @@ export function AdminUsers() {
           onClick={() => setSelectedUser(null)}
         >
           <div
-            className="dash-panel max-w-md w-full p-6 space-y-5 shadow-2xl bg-white dark:bg-[#0e1423]"
+            className="rounded-[28px] border border-slate-200 dark:border-white/10 max-w-md w-full p-6 space-y-5 shadow-2xl bg-white dark:bg-[#0e1423]"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex justify-between items-start border-b border-slate-200 dark:border-white/5 pb-4">
@@ -362,107 +458,6 @@ export function AdminUsers() {
         </div>
       )}
 
-      {/* Create / Edit user modal */}
-      {isFormOpen && (
-        <div
-          className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-6"
-          onClick={resetForm}
-        >
-          <div
-            className="dash-panel max-w-md w-full p-6 space-y-6 shadow-2xl bg-white dark:bg-[#0e1423]"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className="flex justify-between items-center border-b border-slate-200 dark:border-white/5 pb-3">
-              <h3 className="text-xs font-bold tracking-wider text-slate-800 dark:text-white uppercase">
-                {editingUser
-                  ? (language === "en" ? "Edit User" : "Kullanıcıyı Düzenle")
-                  : (language === "en" ? "Add New User" : "Yeni Kullanıcı Ekle")}
-              </h3>
-              <button
-                onClick={resetForm}
-                aria-label={language === "en" ? "Close form" : "Formu kapat"}
-                className="text-slate-450 hover:text-slate-700 dark:hover:text-white text-sm cursor-pointer"
-              >
-                ✕
-              </button>
-            </div>
-
-            <form onSubmit={handleSubmit} className="space-y-4 text-xs font-light text-slate-700 dark:text-slate-350">
-              <div className="space-y-1">
-                <label className="text-[10px] text-slate-500 uppercase tracking-widest block font-semibold">
-                  {language === "en" ? "Full Name" : "Ad Soyad"}
-                </label>
-                <input
-                  type="text"
-                  value={form.name}
-                  onChange={(e) => setForm({ ...form, name: e.target.value })}
-                  className="w-full bg-slate-50 dark:bg-black/40 border border-slate-200 dark:border-white/10 rounded-xl px-4 py-3 text-slate-800 dark:text-slate-200 outline-none"
-                  required
-                />
-              </div>
-              <div className="space-y-1">
-                <label className="text-[10px] text-slate-500 uppercase tracking-widest block font-semibold">
-                  {language === "en" ? "Email Address" : "E-posta Adresi"}
-                </label>
-                <input
-                  type="email"
-                  value={form.email}
-                  onChange={(e) => setForm({ ...form, email: e.target.value })}
-                  className="w-full bg-slate-50 dark:bg-black/40 border border-slate-200 dark:border-white/10 rounded-xl px-4 py-3 text-slate-800 dark:text-slate-200 outline-none"
-                  required
-                />
-              </div>
-              <div className="space-y-1">
-                <label className="text-[10px] text-slate-500 uppercase tracking-widest block font-semibold">
-                  {language === "en" ? "Phone Number" : "Telefon Numarası"}
-                </label>
-                <input
-                  type="tel"
-                  value={form.phone}
-                  onChange={(e) => setForm({ ...form, phone: e.target.value })}
-                  className="w-full bg-slate-50 dark:bg-black/40 border border-slate-200 dark:border-white/10 rounded-xl px-4 py-3 text-slate-800 dark:text-slate-200 outline-none"
-                  required
-                />
-              </div>
-              <div className="space-y-1">
-                <label className="text-[10px] text-slate-500 uppercase tracking-widest block font-semibold">
-                  {language === "en" ? "Role" : "Rol"}
-                </label>
-                <select
-                  value={form.role}
-                  onChange={(e) => setForm({ ...form, role: e.target.value as User["role"] })}
-                  className="w-full bg-slate-50 dark:bg-black/40 border border-slate-200 dark:border-white/10 rounded-xl px-4 py-3 text-slate-800 dark:text-slate-200 outline-none"
-                >
-                  <option value="customer" className="bg-white dark:bg-[#0a0f18] text-slate-800 dark:text-slate-200">
-                    {language === "en" ? "Customer" : "Müşteri"}
-                  </option>
-                  <option value="admin" className="bg-white dark:bg-[#0a0f18] text-slate-800 dark:text-slate-200">
-                    {language === "en" ? "Admin" : "Yönetici"}
-                  </option>
-                </select>
-              </div>
-
-              <div className="flex justify-end gap-3 pt-2 font-sans text-[10px] font-bold uppercase tracking-wider">
-                <button
-                  type="button"
-                  onClick={resetForm}
-                  className="px-5 py-2.5 rounded-full border border-slate-200 dark:border-white/10 text-slate-650 dark:text-slate-350 hover:bg-slate-100 dark:hover:bg-white/5 transition"
-                >
-                  {language === "en" ? "Cancel" : "Vazgeç"}
-                </button>
-                <button
-                  type="submit"
-                  className="px-6 py-2.5 rounded-full bg-accent text-black hover:bg-[#348c70] transition"
-                >
-                  {editingUser
-                    ? (language === "en" ? "Save Changes" : "Değişiklikleri Kaydet")
-                    : (language === "en" ? "Add User" : "Kullanıcı Ekle")}
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
     </div>
   );
 }

@@ -6,6 +6,7 @@ import { readStorage, storageKeys } from "@/lib/storage";
 import productsData from "@/data/products.json";
 import productCategoriesData from "@/data/productCategories.json";
 import { Product, ProductCategory } from "@/types";
+import { productName, productShortDescription, productFullDescription, productCategoryLabelsTr } from "@/data/productTranslations";
 
 export function Shop() {
   const { t, language, formatPrice } = useLanguage();
@@ -27,7 +28,10 @@ export function Shop() {
   const adminCategories = readStorage<ProductCategory[]>(storageKeys.productCategories, productCategoriesData as ProductCategory[]);
   const categories = [
     { id: "all", label: language === "en" ? "All Products" : "Tüm Ürünler" },
-    ...adminCategories.map((cat) => ({ id: cat.id, label: cat.name }))
+    ...adminCategories.map((cat) => ({
+      id: cat.id,
+      label: language === "en" ? cat.name : productCategoryLabelsTr[cat.id] || cat.name
+    }))
   ];
 
   // Product count per category (for sidebar counts)
@@ -40,9 +44,12 @@ export function Shop() {
   const filteredProducts = products
     .filter((product) => {
       const matchesCategory = activeCategory === "all" || product.category === activeCategory;
+      const query = searchQuery.toLowerCase();
       const matchesSearch =
-        product.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        product.shortDescription.toLowerCase().includes(searchQuery.toLowerCase());
+        product.name.toLowerCase().includes(query) ||
+        product.shortDescription.toLowerCase().includes(query) ||
+        productName(product.id, product.name, language).toLowerCase().includes(query) ||
+        productShortDescription(product.id, product.shortDescription, language).toLowerCase().includes(query);
       return matchesCategory && matchesSearch;
     })
     .sort((a, b) => {
@@ -172,7 +179,7 @@ export function Shop() {
                       />
                       {product.featured && (
                         <span className="absolute top-4 left-4 text-[9px] font-bold tracking-widest bg-accent text-black px-2 py-1 rounded-md">
-                          FEATURED
+                          {language === "en" ? "FEATURED" : "ÖNE ÇIKAN"}
                         </span>
                       )}
                     </div>
@@ -185,10 +192,10 @@ export function Shop() {
                             {categories.find((c) => c.id === product.category)?.label || product.category}
                           </span>
                           <h3 className="text-md font-light uppercase tracking-wider text-white mt-1">
-                            {product.name}
+                            {productName(product.id, product.name, language)}
                           </h3>
                           <p className="text-xs text-slate-400 font-light mt-1">
-                            {product.shortDescription}
+                            {productShortDescription(product.id, product.shortDescription, language)}
                           </p>
                         </div>
                         <span className="text-md font-semibold text-accent shrink-0">
@@ -300,7 +307,7 @@ export function Shop() {
                     {categories.find((c) => c.id === quickViewProduct.category)?.label || quickViewProduct.category}
                   </span>
                   <h2 className="text-3xl font-light uppercase tracking-widest text-white mt-1">
-                    {quickViewProduct.name}
+                    {productName(quickViewProduct.id, quickViewProduct.name, language)}
                   </h2>
                 </div>
 
@@ -314,7 +321,7 @@ export function Shop() {
                 </div>
 
                 <p className="text-slate-300 font-light text-sm leading-relaxed">
-                  {quickViewProduct.fullDescription}
+                  {productFullDescription(quickViewProduct.id, quickViewProduct.fullDescription, language)}
                 </p>
               </div>
 

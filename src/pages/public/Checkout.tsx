@@ -1,15 +1,24 @@
-import { useState } from "react";
-import { Link } from "react-router-dom";
+import { useEffect, useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
 import { useLanguage } from "@/i18n/LanguageContext";
 import { useCart } from "@/context/CartContext";
 import { getActiveSession } from "@/lib/auth";
 import { readStorage, writeStorage, storageKeys } from "@/lib/storage";
 import { Order, OrderItem } from "@/types";
+import { productName } from "@/data/productTranslations";
 
 export function Checkout() {
   const { t, language, formatPrice } = useLanguage();
   const { cart, clearCart } = useCart();
+  const navigate = useNavigate();
   const session = getActiveSession();
+
+  // Direct navigation to /checkout should require login too, not just the cart drawer's button
+  useEffect(() => {
+    if (!session) {
+      navigate("/login", { state: { from: "/checkout" } });
+    }
+  }, [session, navigate]);
 
   // Form states
   const [shippingName, setShippingName] = useState("");
@@ -119,12 +128,14 @@ export function Checkout() {
     }, 1500);
   };
 
+  if (!session) return null;
+
   return (
     <div className="space-y-12 pt-28 pb-10 max-w-7xl mx-auto px-6">
       {/* Header */}
       <div className="text-center max-w-3xl mx-auto space-y-4">
         <span className="text-xs uppercase tracking-[0.3em] text-accent font-semibold block animate-fade-in">
-          SECURE CHECKOUT
+          {language === "en" ? "SECURE CHECKOUT" : "GÜVENLİ ÖDEME"}
         </span>
         <h1 className="text-4xl md:text-5xl font-extralight tracking-widest uppercase text-white">
           {t("nav.checkout")}
@@ -173,7 +184,10 @@ export function Checkout() {
                 {language === "en" ? "Total Charge" : "Toplam Tutar"}
               </span>
               <span className="text-lg font-semibold text-accent">
-                {createdOrder.currency} {createdOrder.subtotal.toLocaleString()}
+                {formatPrice(
+                  createdOrder.currency === "$" ? createdOrder.subtotal : createdOrder.subtotal / 34,
+                  createdOrder.currency === "₺" ? createdOrder.subtotal : createdOrder.subtotal * 34
+                )}
               </span>
             </div>
           </div>
@@ -225,13 +239,13 @@ export function Checkout() {
 
                     <div className="flex justify-between items-end">
                       <div className="space-y-0.5">
-                        <span className="text-[7px] text-slate-500 uppercase tracking-widest block">Cardholder</span>
+                        <span className="text-[7px] text-slate-500 uppercase tracking-widest block">{language === "en" ? "Cardholder" : "Kart Sahibi"}</span>
                         <span className="text-xs font-light tracking-wider uppercase truncate block max-w-[180px]">
-                          {cardHolder || "YOUR NAME"}
+                          {cardHolder || (language === "en" ? "YOUR NAME" : "AD SOYAD")}
                         </span>
                       </div>
                       <div className="space-y-0.5 text-right">
-                        <span className="text-[7px] text-slate-500 uppercase tracking-widest block">Expires</span>
+                        <span className="text-[7px] text-slate-500 uppercase tracking-widest block">{language === "en" ? "Expires" : "Son Kul."}</span>
                         <span className="text-xs font-light tracking-wider block">
                           {cardExpiry || "MM/YY"}
                         </span>
@@ -248,14 +262,16 @@ export function Checkout() {
                       {/* Signature strip and CVV */}
                       <div className="flex items-center gap-3">
                         <div className="flex-grow h-8 bg-slate-700/40 rounded px-3 flex items-center text-[10px] text-slate-400 italic">
-                          Authorized Signature
+                          {language === "en" ? "Authorized Signature" : "Yetkili İmza"}
                         </div>
                         <div className="w-12 h-8 bg-white text-black font-semibold text-xs flex items-center justify-center rounded">
                           {cardCvv || "CVV"}
                         </div>
                       </div>
                       <p className="text-[6px] text-slate-500 font-light leading-relaxed text-center">
-                        This card is a secure mock preview model. Only authorized transactions on the EVALIS platform are supported.
+                        {language === "en"
+                          ? "This card is a secure mock preview model. Only authorized transactions on the EVALIS platform are supported."
+                          : "Bu kart güvenli bir örnek önizleme modelidir. Yalnızca EVALIS platformundaki yetkili işlemler desteklenir."}
                       </p>
                     </div>
                   </div>
@@ -270,45 +286,49 @@ export function Checkout() {
               </label>
 
               <div className="space-y-2">
-                <span className="text-[10px] text-slate-500 uppercase tracking-widest block">Full Name</span>
+                <span className="text-[10px] text-slate-500 uppercase tracking-widest block">{language === "en" ? "Full Name" : "Ad Soyad"}</span>
                 <input
                   type="text"
                   value={shippingName}
                   onChange={(e) => setShippingName(e.target.value)}
-                  placeholder="Ahmet Yılmaz"
+                  placeholder={language === "en" ? "Jane Doe" : "Ahmet Yılmaz"}
+                  required
                   className="w-full rounded-xl border border-white/10 bg-black/40 px-4 py-3 text-sm text-slate-200 outline-none focus:border-accent transition"
                 />
               </div>
 
               <div className="space-y-2">
-                <span className="text-[10px] text-slate-500 uppercase tracking-widest block">Address</span>
+                <span className="text-[10px] text-slate-500 uppercase tracking-widest block">{language === "en" ? "Address" : "Adres"}</span>
                 <input
                   type="text"
                   value={address}
                   onChange={(e) => setAddress(e.target.value)}
-                  placeholder="Barbaros Mah. Mor Sümbül Sok. No: 12"
+                  placeholder={language === "en" ? "123 Main Street, Apt 4B" : "Barbaros Mah. Mor Sümbül Sok. No: 12"}
+                  required
                   className="w-full rounded-xl border border-white/10 bg-black/40 px-4 py-3 text-sm text-slate-200 outline-none focus:border-accent transition"
                 />
               </div>
 
               <div className="grid grid-cols-2 gap-6">
                 <div className="space-y-2">
-                  <span className="text-[10px] text-slate-500 uppercase tracking-widest block">City</span>
+                  <span className="text-[10px] text-slate-500 uppercase tracking-widest block">{language === "en" ? "City" : "Şehir"}</span>
                   <input
                     type="text"
                     value={city}
                     onChange={(e) => setCity(e.target.value)}
                     placeholder="Istanbul"
+                    required
                     className="w-full rounded-xl border border-white/10 bg-black/40 px-4 py-3 text-sm text-slate-200 outline-none focus:border-accent transition"
                   />
                 </div>
                 <div className="space-y-2">
-                  <span className="text-[10px] text-slate-500 uppercase tracking-widest block">Zip Code</span>
+                  <span className="text-[10px] text-slate-500 uppercase tracking-widest block">{language === "en" ? "Zip Code" : "Posta Kodu"}</span>
                   <input
                     type="text"
                     value={zipCode}
                     onChange={(e) => setZipCode(e.target.value)}
                     placeholder="34746"
+                    required
                     className="w-full rounded-xl border border-white/10 bg-black/40 px-4 py-3 text-sm text-slate-200 outline-none focus:border-accent transition"
                   />
                 </div>
@@ -322,38 +342,41 @@ export function Checkout() {
               </label>
 
               <div className="space-y-2">
-                <span className="text-[10px] text-slate-500 uppercase tracking-widest block">Cardholder Name</span>
+                <span className="text-[10px] text-slate-500 uppercase tracking-widest block">{language === "en" ? "Cardholder Name" : "Kart Sahibinin Adı"}</span>
                 <input
                   type="text"
                   value={cardHolder}
                   onChange={(e) => setCardHolder(e.target.value)}
                   onFocus={() => setIsCardFlipped(false)}
-                  placeholder="AHMET YILMAZ"
+                  placeholder={language === "en" ? "JANE DOE" : "AHMET YILMAZ"}
+                  required
                   className="w-full rounded-xl border border-white/10 bg-black/40 px-4 py-3 text-sm text-slate-200 outline-none focus:border-accent transition"
                 />
               </div>
 
               <div className="space-y-2">
-                <span className="text-[10px] text-slate-500 uppercase tracking-widest block">Card Number</span>
+                <span className="text-[10px] text-slate-500 uppercase tracking-widest block">{language === "en" ? "Card Number" : "Kart Numarası"}</span>
                 <input
                   type="text"
                   value={cardNumber}
                   onChange={handleCardNumberChange}
                   onFocus={() => setIsCardFlipped(false)}
                   placeholder="4000 1234 5678 9010"
+                  required
                   className="w-full rounded-xl border border-white/10 bg-black/40 px-4 py-3 text-sm text-slate-200 outline-none focus:border-accent transition"
                 />
               </div>
 
               <div className="grid grid-cols-2 gap-6">
                 <div className="space-y-2">
-                  <span className="text-[10px] text-slate-500 uppercase tracking-widest block">Expiry Date</span>
+                  <span className="text-[10px] text-slate-500 uppercase tracking-widest block">{language === "en" ? "Expiry Date" : "Son Kullanma Tarihi"}</span>
                   <input
                     type="text"
                     value={cardExpiry}
                     onChange={handleExpiryChange}
                     onFocus={() => setIsCardFlipped(false)}
                     placeholder="MM/YY"
+                    required
                     className="w-full rounded-xl border border-white/10 bg-black/40 px-4 py-3 text-sm text-slate-200 outline-none focus:border-accent transition"
                   />
                 </div>
@@ -366,6 +389,7 @@ export function Checkout() {
                     onFocus={() => setIsCardFlipped(true)}
                     onBlur={() => setIsCardFlipped(false)}
                     placeholder="•••"
+                    required
                     className="w-full rounded-xl border border-white/10 bg-black/40 px-4 py-3 text-sm text-slate-200 outline-none focus:border-accent transition"
                   />
                 </div>
@@ -407,10 +431,10 @@ export function Checkout() {
                     </div>
                     <div className="flex-grow space-y-0.5">
                       <h4 className="text-xs font-light uppercase tracking-wider text-slate-200 truncate max-w-[160px]">
-                        {item.product.name}
+                        {productName(item.product.id, item.product.name, language)}
                       </h4>
                       <p className="text-[10px] text-slate-400">
-                        Qty: {item.quantity} x {formatPrice(item.product.priceUSD, item.product.priceTRY)}
+                        {language === "en" ? "Qty" : "Adet"}: {item.quantity} x {formatPrice(item.product.priceUSD, item.product.priceTRY)}
                       </p>
                     </div>
                     <span className="text-xs font-semibold text-slate-200">
@@ -427,7 +451,7 @@ export function Checkout() {
             {/* Calculations and Totals */}
             <div className="border-t border-white/10 pt-6 space-y-3 text-xs font-light text-slate-400">
               <div className="flex justify-between items-center">
-                <span>Subtotal</span>
+                <span>{language === "en" ? "Subtotal" : "Ara Toplam"}</span>
                 <span className="text-slate-200">
                   {formatPrice(subtotalUSD, subtotalTRY)}
                 </span>
@@ -447,7 +471,7 @@ export function Checkout() {
                 </span>
               </div>
               <div className="flex justify-between items-center text-sm font-semibold text-accent border-t border-white/5 pt-3">
-                <span>Total</span>
+                <span>{language === "en" ? "Total" : "Toplam"}</span>
                 <span>
                   {formatPrice(totalUSD, totalTRY)}
                 </span>
