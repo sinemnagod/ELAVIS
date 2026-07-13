@@ -1,6 +1,10 @@
 import { readStorage, writeStorage, removeStorage, storageKeys } from "./storage";
 import usersData from "@/data/users.json";
-import { User } from "@/types";
+import ordersData from "@/data/orders.json";
+import testDrivesData from "@/data/test-drives.json";
+import sessionsData from "@/data/sessions.json";
+import supportTicketsData from "@/data/support-tickets.json";
+import { User, Order, TestDrive, ChargingSession, SupportTicket } from "@/types";
 
 export interface Session {
   user: User;
@@ -64,12 +68,23 @@ export function mockLogout() {
   if (typeof window !== "undefined") window.sessionStorage.removeItem(storageKeys.session);
 }
 
+// Writes `data` into `key` if what's currently stored is shorter than the
+// seed set — i.e. on first load, or if storage was cleared. Once a user has
+// generated more real records than the seed count, this stops touching it.
+function seedIfShorter<T>(key: string, data: T[]) {
+  const stored = readStorage<T[]>(key, []);
+  if (stored.length < data.length) {
+    writeStorage(key, data);
+  }
+}
+
 export function seedLocalStorage() {
   // Seeds data if not already populated in localStorage
   if (typeof window !== "undefined") {
-    const stored = readStorage<User[]>(storageKeys.users, []);
-    if (stored.length < usersData.length) {
-      writeStorage(storageKeys.users, usersData);
-    }
+    seedIfShorter<User>(storageKeys.users, usersData as User[]);
+    seedIfShorter<Order>(storageKeys.orders, ordersData as Order[]);
+    seedIfShorter<TestDrive>(storageKeys.testDrives, testDrivesData as TestDrive[]);
+    seedIfShorter<ChargingSession>(storageKeys.sessions, sessionsData as ChargingSession[]);
+    seedIfShorter<SupportTicket>(storageKeys.supportTickets, supportTicketsData as SupportTicket[]);
   }
 }
